@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment files (contain secrets!)
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+
+# MongoDB local data
+data/
+
+# Uploads (local dev only)
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Next.js
+.next/
+out/
