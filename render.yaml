@@ -5,7 +5,7 @@ services:
     plan: free
     env: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -43,7 +43,7 @@ services:
     plan: free
     env: node
     rootDir: frontend
-    buildCommand: npm install && NODE_OPTIONS=--max_old_space_size=400 npm run build
+    buildCommand: npm install --include=dev && NODE_OPTIONS=--max_old_space_size=400 npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
