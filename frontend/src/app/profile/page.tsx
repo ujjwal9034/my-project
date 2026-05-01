@@ -47,7 +47,7 @@ export default function Profile() {
   // Address
   const [addresses, setAddresses] = useState<any[]>([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const initialAddressState = { _id: '', label: '', fullName: '', phone: '', houseNo: '', area: '', landmark: '', city: '', postalCode: '' };
+  const initialAddressState = { _id: '', label: '', fullName: '', phone: '', houseNo: '', area: '', landmark: '', address: '', city: '', postalCode: '' };
   const [newAddress, setNewAddress] = useState(initialAddressState);
 
   // Orders

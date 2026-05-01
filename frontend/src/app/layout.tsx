@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -39,7 +40,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col transition-colors duration-300`}>
         <ToastProvider />
-        <Navbar />
+        <Suspense fallback={<div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800"></div>}>
+          <Navbar />
+        </Suspense>
         <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>

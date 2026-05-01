@@ -112,9 +112,16 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Catch-all route to serve index.html for SPA
+// Catch-all route to serve index.html for SPA (if it exists)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const indexPath = path.join(__dirname, 'public', 'index.html');
+  import('fs').then(fs => {
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).json({ message: 'API Route Not Found' });
+    }
+  });
 });
 
 // Error Handling Middleware
