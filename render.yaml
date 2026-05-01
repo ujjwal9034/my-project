@@ -10,6 +10,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
@@ -41,11 +43,15 @@ services:
     plan: free
     env: node
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && NODE_OPTIONS=--max_old_space_size=400 npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_TELEMETRY_DISABLED
+        value: 1
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
