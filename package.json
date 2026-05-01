@@ -1,4 +1,11 @@
 {
+  "name": "my-project",
+  "version": "1.0.0",
+  "description": "My dynamic website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node dist/index.js"
+  },
   "dependencies": {
     "autoprefixer": "^10.4.27",
     "cors": "^2.8.6",
