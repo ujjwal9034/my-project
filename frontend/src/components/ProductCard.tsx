@@ -4,16 +4,19 @@ import Link from 'next/link';
 import { useStore, CartItem } from '@/store/useStore';
 import { getImageUrl } from '@/utils/api';
 import api from '@/utils/api';
-import { ShoppingCart, Star, Heart } from 'lucide-react';
+import { ShoppingCart, Star, Heart, Truck, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import ReplaceCartModal from './ReplaceCartModal';
+import { useState } from 'react';
 
 interface ProductCardProps {
   product: any;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, userInfo, wishlist, toggleWishlistItem } = useStore();
+  const { addToCart, userInfo, wishlist, toggleWishlistItem, cart, updateCartQty, removeFromCart, clearCart } = useStore();
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -24,14 +27,32 @@ export default function ProductCard({ product }: ProductCardProps) {
       return;
     }
 
+    const sellerId = typeof product.seller === 'object' ? product.seller._id : product.seller;
+    const sellerName = typeof product.seller === 'object' ? (product.seller.storeName || 'Unnamed Store') : 'Unnamed Store';
+
+    // Single-store restriction check
+    if (cart.length > 0) {
+      const existingSeller = cart[0].seller;
+      if (existingSeller !== sellerId) {
+        setShowReplaceModal(true);
+        return;
+      }
+    }
+
+    executeAddToCart(sellerId, sellerName);
+  };
+
+  const executeAddToCart = (sellerId: string, sellerName: string) => {
     const item: CartItem = {
       product: product._id,
       name: product.name,
       price: product.price,
       qty: 1,
       image: product.imageUrl,
-      seller: typeof product.seller === 'object' ? product.seller._id : product.seller,
+      seller: sellerId,
+      sellerName: sellerName,
       sellerPickupSlots: typeof product.seller === 'object' ? product.seller.pickupSlots : undefined,
+      sellerDeliveryCharge: typeof product.seller === 'object' ? (product.seller.deliveryCharge ?? 5) : 5,
     };
     addToCart(item);
     toast.success(`${product.name} added to cart!`);
@@ -65,10 +86,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   const isInWishlist = wishlist.includes(product._id);
-  const sellerName = typeof product.seller === 'object' ? product.seller?.name : 'Local Store';
+  const cartItem = cart.find(x => x.product === product._id);
+  const sellerName = typeof product.seller === 'object' ? (product.seller?.storeName || 'Unnamed Store') : 'Unnamed Store';
 
   return (
-    <Link href={`/product/${product._id}`}>
+    <>
+      <Link href={`/product/${product._id}`}>
       <motion.div
         whileHover={{ y: -4 }}
         className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group hover:shadow-xl hover:shadow-green-50 dark:hover:shadow-green-900/10 transition-all duration-300 h-full flex flex-col"
@@ -118,10 +141,27 @@ export default function ProductCard({ product }: ProductCardProps) {
             <h3 className="font-bold text-gray-800 dark:text-gray-100 mb-1 truncate text-sm sm:text-base group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
               {product.name}
             </h3>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">by {sellerName}</p>
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Store: <span className="font-semibold text-gray-600 dark:text-gray-300">{sellerName}</span>
+              </p>
+            </div>
+
+            <div className="flex gap-2 mb-3">
+              {product.seller?.deliveryAvailable && (
+                <span className="text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Truck size={10} /> Delivery
+                </span>
+              )}
+              {product.seller?.pickupAvailable && (
+                <span className="text-[10px] font-bold bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Package size={10} /> Pickup
+                </span>
+              )}
+            </div>
             
             {/* Rating */}
-            <div className="flex items-center gap-1 mb-3">
+            <div className="flex items-center gap-1 mb-2">
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
@@ -137,25 +177,70 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Price & Cart */}
-          <div className="flex items-center justify-between mt-auto">
+            {/* Price & Cart */}
+          <div className="flex items-center justify-between mt-auto pt-2">
             <span className="text-xl font-extrabold text-green-600 dark:text-green-400">
               ₹{product.price.toFixed(2)} {product.unit && <span className="text-xs text-gray-500 font-medium">/ {product.unit}</span>}
             </span>
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock <= 0}
-              className={`p-2.5 rounded-xl transition-all transform active:scale-95 ${
-                product.stock > 0
-                  ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-lg hover:shadow-green-200 dark:hover:shadow-green-900/30'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <ShoppingCart size={18} />
-            </button>
+            {cartItem ? (
+              <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800" onClick={e => e.preventDefault()}>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (cartItem.qty === 1) {
+                      removeFromCart(product._id);
+                      toast.success('Removed from cart');
+                    } else {
+                      updateCartQty(product._id, cartItem.qty - 1);
+                    }
+                  }}
+                  className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-l-xl"
+                >
+                  <span className="text-lg font-bold leading-none mb-1">-</span>
+                </button>
+                <span className="text-sm font-bold text-gray-800 dark:text-white px-2 text-center">{cartItem.qty}</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (cartItem.qty < product.stock) {
+                      updateCartQty(product._id, cartItem.qty + 1);
+                    } else {
+                      toast.error(`Only ${product.stock} items available`);
+                    }
+                  }}
+                  className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-r-xl"
+                >
+                  <span className="text-lg font-bold leading-none mb-0.5">+</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+                className={`p-2.5 rounded-xl transition-all transform active:scale-95 ${
+                  product.stock > 0
+                    ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-lg hover:shadow-green-200 dark:hover:shadow-green-900/30'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <ShoppingCart size={18} />
+              </button>
+            )}
           </div>
         </div>
       </motion.div>
     </Link>
+      <ReplaceCartModal
+        isOpen={showReplaceModal}
+        onClose={() => setShowReplaceModal(false)}
+        onConfirm={() => {
+          clearCart();
+          setShowReplaceModal(false);
+          const sellerId = typeof product.seller === 'object' ? product.seller._id : product.seller;
+          executeAddToCart(sellerId, sellerName);
+        }}
+        newStoreName={sellerName}
+      />
+    </>
   );
 }

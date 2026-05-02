@@ -39,26 +39,33 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Location filtering (within 5km)
+  const User = require('../models/User').default;
+  
+  // Base query for active, approved sellers
+  const activeSellerQuery: any = {
+    role: 'seller',
+    isApproved: true,
+    isBanned: false,
+    account_status: { $in: ['active', 'warned'] }
+  };
+
   if (req.query.lat && req.query.lng) {
     const lat = Number(req.query.lat);
     const lng = Number(req.query.lng);
     const radiusInKm = 5;
     const radiusInRadian = radiusInKm / 6378.1; // Earth radius in km
     
-    // Find sellers within this radius
-    const User = require('../models/User').default;
-    const nearbySellers = await User.find({
-      location: {
-        $geoWithin: {
-          $centerSphere: [[lng, lat], radiusInRadian]
-        }
-      },
-      role: 'seller'
-    }).select('_id');
-    
-    const sellerIds = nearbySellers.map((seller: any) => seller._id);
-    filter.seller = { $in: sellerIds };
+    activeSellerQuery.location = {
+      $geoWithin: {
+        $centerSphere: [[lng, lat], radiusInRadian]
+      }
+    };
   }
+  
+  // Find valid sellers matching the criteria
+  const validSellers = await User.find(activeSellerQuery).select('_id');
+  const validSellerIds = validSellers.map((seller: any) => seller._id);
+  filter.seller = { $in: validSellerIds };
 
   // Sort options
   let sortOption: any = { createdAt: -1 }; // Default: newest first
@@ -82,7 +89,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 
   const count = await Product.countDocuments(filter);
   const products = await Product.find(filter)
-    .populate('seller', 'name email storeName pickupSlots')
+    .populate('seller', 'name email storeName pickupSlots deliveryAvailable pickupAvailable deliveryCharge')
     .limit(pageSize)
     .skip(pageSize * (page - 1))
     .sort(sortOption);
@@ -102,8 +109,20 @@ export const getCategories = asyncHandler(async (req: Request, res: Response) =>
 // @route   GET /api/products/category/:category
 // @access  Public
 export const getProductsByCategory = asyncHandler(async (req: Request, res: Response) => {
-  const products = await Product.find({ category: req.params.category })
-    .populate('seller', 'name email')
+  const User = require('../models/User').default;
+  const validSellers = await User.find({
+    role: 'seller',
+    isApproved: true,
+    isBanned: false,
+    account_status: { $in: ['active', 'warned'] }
+  }).select('_id');
+  const validSellerIds = validSellers.map((seller: any) => seller._id);
+
+  const products = await Product.find({ 
+    category: req.params.category,
+    seller: { $in: validSellerIds }
+  })
+    .populate('seller', 'name email storeName pickupSlots deliveryAvailable pickupAvailable deliveryCharge')
     .sort({ createdAt: -1 });
   res.json(products);
 });
@@ -113,10 +132,15 @@ export const getProductsByCategory = asyncHandler(async (req: Request, res: Resp
 // @access  Public
 export const getProductById = asyncHandler(async (req: Request, res: Response) => {
   const product = await Product.findById(req.params.id)
-    .populate('seller', 'name email')
+    .populate('seller', 'name email storeName pickupSlots deliveryAvailable pickupAvailable deliveryCharge isApproved isBanned account_status')
     .populate('reviews.user', 'name');
 
   if (product) {
+    const seller: any = product.seller;
+    if (seller && (!seller.isApproved || seller.isBanned || seller.account_status === 'removed' || seller.account_status === 'banned')) {
+      res.status(404);
+      throw new Error('Product is currently unavailable');
+    }
     res.json(product);
   } else {
     res.status(404);
@@ -128,6 +152,11 @@ export const getProductById = asyncHandler(async (req: Request, res: Response) =
 // @route   POST /api/products
 // @access  Private/Seller
 export const createProduct = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user.isApproved) {
+    res.status(403);
+    throw new Error('Your store must be approved by an admin before you can add products.');
+  }
+
   const { name, price, description, category, stock, unit } = req.body;
   
   if (!name || price === undefined || !description || !category || stock === undefined) {
@@ -158,7 +187,7 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
 
   const createdProduct = await product.save();
   // Populate seller info before returning
-  await createdProduct.populate('seller', 'name email');
+  await createdProduct.populate('seller', 'name email storeName pickupSlots deliveryAvailable pickupAvailable deliveryCharge');
   res.status(201).json(createdProduct);
 });
 
@@ -192,7 +221,7 @@ export const updateProduct = asyncHandler(async (req: AuthRequest, res: Response
     }
 
     const updatedProduct = await product.save();
-    await updatedProduct.populate('seller', 'name email');
+    await updatedProduct.populate('seller', 'name email storeName pickupSlots deliveryAvailable pickupAvailable deliveryCharge');
     res.json(updatedProduct);
   } else {
     res.status(404);
@@ -224,7 +253,7 @@ export const deleteProduct = asyncHandler(async (req: AuthRequest, res: Response
 // @access  Private/Seller
 export const getMyProducts = asyncHandler(async (req: AuthRequest, res: Response) => {
   const products = await Product.find({ seller: req.user._id })
-    .populate('seller', 'name email')
+    .populate('seller', 'name email storeName pickupSlots deliveryAvailable pickupAvailable deliveryCharge')
     .sort({ createdAt: -1 });
   res.json(products);
 });
@@ -245,13 +274,19 @@ export const createProductReview = asyncHandler(async (req: AuthRequest, res: Re
       throw new Error('Product already reviewed');
     }
 
+    let photos: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      photos = req.files.map((file: any) => `/uploads/${file.filename}`);
+    }
+
     const review = {
       user: req.user._id,
       rating: Number(rating),
       comment,
+      photos,
     };
 
-    product.reviews.push(review);
+    product.reviews.push(review as any);
     product.numReviews = product.reviews.length;
     product.rating =
       product.reviews.reduce((acc: number, item: any) => item.rating + acc, 0) /

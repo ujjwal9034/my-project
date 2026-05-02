@@ -19,6 +19,9 @@ export interface User {
   banReason?: string;
   preferences?: { deliveryCharge?: number; freeDeliveryAbove?: number };
   location?: { coordinates: [number, number] };
+  twoFactorEnabled?: boolean;
+  kycStatus?: 'pending' | 'verified' | 'rejected';
+  kycDocument?: string;
 }
 
 export interface CartItem {
@@ -28,13 +31,16 @@ export interface CartItem {
   qty: number;
   image: string;
   seller: string;
+  sellerName?: string;
   sellerPickupSlots?: string[];
+  sellerDeliveryCharge?: number;
 }
 
 interface AppState {
   userInfo: User | null;
   setUserInfo: (user: User | null) => void;
   cart: CartItem[];
+  setCart: (cart: CartItem[]) => void;
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string) => void;
   updateCartQty: (productId: string, qty: number) => void;
@@ -68,26 +74,41 @@ export const useStore = create<AppState>()(
       userInfo: null,
       setUserInfo: (user) => set({ userInfo: user }),
       cart: [],
+      setCart: (cart) => set({ cart }),
       addToCart: (item) =>
         set((state) => {
           const existingItem = state.cart.find((x) => x.product === item.product);
-          if (existingItem) {
-            return {
-              cart: state.cart.map((x) => (x.product === existingItem.product ? item : x)),
-            };
-          } else {
-            return { cart: [...state.cart, item] };
+          const newCart = existingItem
+            ? state.cart.map((x) => (x.product === existingItem.product ? item : x))
+            : [...state.cart, item];
+          
+          if (state.userInfo) {
+            import('@/utils/api').then(m => m.default.put('/users/cart', { cart: newCart }).catch(console.error));
           }
+          return { cart: newCart };
         }),
       removeFromCart: (id) =>
-        set((state) => ({
-          cart: state.cart.filter((x) => x.product !== id),
-        })),
+        set((state) => {
+          const newCart = state.cart.filter((x) => x.product !== id);
+          if (state.userInfo) {
+            import('@/utils/api').then(m => m.default.put('/users/cart', { cart: newCart }).catch(console.error));
+          }
+          return { cart: newCart };
+        }),
       updateCartQty: (productId, qty) =>
-        set((state) => ({
-          cart: state.cart.map((x) => x.product === productId ? { ...x, qty } : x),
-        })),
-      clearCart: () => set({ cart: [] }),
+        set((state) => {
+          const newCart = state.cart.map((x) => x.product === productId ? { ...x, qty } : x);
+          if (state.userInfo) {
+            import('@/utils/api').then(m => m.default.put('/users/cart', { cart: newCart }).catch(console.error));
+          }
+          return { cart: newCart };
+        }),
+      clearCart: () => set((state) => {
+        if (state.userInfo) {
+          import('@/utils/api').then(m => m.default.put('/users/cart', { cart: [] }).catch(console.error));
+        }
+        return { cart: [] };
+      }),
       wishlist: [],
       setWishlist: (ids) => set({ wishlist: ids }),
       toggleWishlistItem: (id) =>

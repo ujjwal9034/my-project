@@ -1,59 +1,37 @@
 services:
-  # Backend Web Service
+  # Backend Service
   - type: web
-    name: freshmarket-backend
-    plan: free
+    name: freshmarket-api
     env: node
-    rootDir: backend
-    buildCommand: npm install --include=dev && npm run build
-    startCommand: npm start
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NODE_VERSION
-        value: 20
-      - key: MONGO_URI
-        sync: false
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromValue: ${MONGODB_URI} # To be set in Render dashboard
       - key: JWT_SECRET
         generateValue: true
-      - key: PORT
-        value: 5001
-      - key: ALLOWED_ORIGIN
-        value: https://freshmarket-frontend.onrender.com
       - key: ADMIN_EMAIL
-        sync: false
+        value: ujjwalchauhan599@gmail.com
       - key: ADMIN_PASSWORD
-        sync: false
-      - key: ADMIN_NAME
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM_EMAIL
-        sync: false
+        value: Arjun@321
+      - key: ALLOWED_ORIGIN
+        value: "*" # Or your frontend URL
 
-  # Frontend Web Service
+  # Frontend Service
   - type: web
-    name: freshmarket-frontend
-    plan: free
+    name: freshmarket-web
     env: node
-    rootDir: frontend
-    buildCommand: npm install --include=dev && NODE_OPTIONS=--max_old_space_size=400 npm run build
-    startCommand: npm start
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm run start
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20
-      - key: NEXT_TELEMETRY_DISABLED
-        value: 1
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
-          name: freshmarket-backend
-          envVarKey: RENDER_EXTERNAL_URL
+          name: freshmarket-api
+          property: host

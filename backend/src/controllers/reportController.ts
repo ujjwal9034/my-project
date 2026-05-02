@@ -84,6 +84,23 @@ export const getAllReports = asyncHandler(async (req: AuthRequest, res: Response
   res.json(reports);
 });
 
+// @desc    Get reports filed against the logged-in seller
+// @route   GET /api/reports/seller
+// @access  Private (seller)
+export const getSellerReports = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+    res.status(403);
+    throw new Error('Not authorized as seller');
+  }
+
+  const reports = await Report.find({ seller: req.user._id })
+    .populate('user', 'name')
+    .populate('order', '_id createdAt totalPrice')
+    .sort({ createdAt: -1 });
+
+  res.json(reports);
+});
+
 // @desc    Update report status + admin notes (admin only)
 // @route   PUT /api/reports/:id
 // @access  Private/Admin

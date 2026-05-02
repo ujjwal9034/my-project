@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import User from '../models/User';
 import Order from '../models/Order';
 import Wishlist from '../models/Wishlist';
+import Product from '../models/Product';
 import Report from '../models/Report';
 import generateToken from '../utils/generateToken';
 import sendEmail from '../utils/sendEmail';
@@ -18,7 +19,7 @@ const LOCK_TIME = 30 * 60 * 1000; // 30 minutes
 // @route   POST /api/users/login
 // @access  Public
 export const authUser = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, twoFactorCode } = req.body;
 
   const user = await User.findOne({ email });
 
@@ -41,6 +42,33 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (await bcrypt.compare(password, user.password || '')) {
+    if (user.twoFactorEnabled) {
+      if (!twoFactorCode) {
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        user.twoFactorCode = code;
+        user.twoFactorCodeExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+        await user.save();
+        
+        await sendEmail({
+          email: user.email,
+          subject: 'FreshMarket - Your 2FA Login Code',
+          message: `Your login code is: ${code}\nIt expires in 10 minutes.`,
+        });
+
+        res.json({ requires2FA: true, message: '2FA code sent to your email.' });
+        return;
+      }
+
+      if (user.twoFactorCode !== twoFactorCode || !user.twoFactorCodeExpire || user.twoFactorCodeExpire < new Date()) {
+        res.status(401);
+        throw new Error('Invalid or expired 2FA code');
+      }
+
+      // Clear 2FA code on success
+      user.twoFactorCode = undefined;
+      user.twoFactorCodeExpire = undefined;
+    }
+
     // Reset login attempts on successful login
     user.loginAttempts = 0;
     user.lockUntil = undefined;
@@ -65,6 +93,10 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       avatar: user.avatar,
       preferences: user.preferences,
       location: user.location,
+      account_status: user.account_status,
+      warningCount: user.warningCount,
+      deliveryCharge: user.deliveryCharge,
+      cart: user.cart,
     });
   } else {
     // Increment login attempts
@@ -144,6 +176,9 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
       avatar: user.avatar,
       preferences: user.preferences,
       location: user.location,
+      account_status: user.account_status,
+      warningCount: user.warningCount,
+      deliveryCharge: user.deliveryCharge,
     });
   } else {
     res.status(400);
@@ -203,6 +238,8 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
     if (req.body.deliveryAvailable !== undefined) user.deliveryAvailable = req.body.deliveryAvailable;
     if (req.body.pickupAvailable !== undefined) user.pickupAvailable = req.body.pickupAvailable;
     if (req.body.pickupSlots !== undefined) user.pickupSlots = req.body.pickupSlots;
+    if (req.body.deliveryCharge !== undefined) user.deliveryCharge = req.body.deliveryCharge;
+    if (req.body.twoFactorEnabled !== undefined) user.twoFactorEnabled = req.body.twoFactorEnabled;
 
     if (req.body.password) {
       const salt = await bcrypt.genSalt(12);
@@ -225,11 +262,31 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
       deliveryAvailable: updatedUser.deliveryAvailable,
       pickupAvailable: updatedUser.pickupAvailable,
       pickupSlots: updatedUser.pickupSlots,
+      account_status: updatedUser.account_status,
+      warningCount: updatedUser.warningCount,
+      deliveryCharge: updatedUser.deliveryCharge,
+      cart: updatedUser.cart,
     });
   } else {
     res.status(404);
     throw new Error('User not found');
   }
+});
+
+// @desc    Sync user cart
+// @route   PUT /api/users/cart
+// @access  Private
+export const syncCart = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.cart = req.body.cart || [];
+  await user.save();
+
+  res.json({ message: 'Cart synced successfully', cart: user.cart });
 });
 
 // @desc    Change password (requires current password)
@@ -281,7 +338,11 @@ export const deleteAccount = asyncHandler(async (req: AuthRequest, res: Response
   }
 
   // Delete user's wishlist
-  await Wishlist.deleteOne({ user: req.user._id });
+  await Wishlist.deleteMany({ user: req.user._id });
+  // Delete user's products (if seller)
+  if (user.role === 'seller') {
+    await Product.deleteMany({ seller: req.user._id });
+  }
   // Delete the user
   await User.deleteOne({ _id: req.user._id });
 
@@ -395,6 +456,15 @@ export const getUsers = asyncHandler(async (req: AuthRequest, res: Response) => 
   res.json(users);
 });
 
+// @desc    Get all active stores (Public)
+// @route   GET /api/users/stores
+// @access  Public
+export const getStores = asyncHandler(async (req: Request, res: Response) => {
+  const stores = await User.find({ role: 'seller', isApproved: true, isBanned: false, account_status: 'active' })
+    .select('name storeName avatar address location deliveryAvailable pickupAvailable');
+  res.json(stores);
+});
+
 // @desc    Approve a seller (Admin)
 // @route   PUT /api/users/:id/approve
 // @access  Private/Admin
@@ -464,7 +534,10 @@ export const deleteUser = asyncHandler(async (req: AuthRequest, res: Response) =
     throw new Error('This admin account is protected and cannot be deleted.');
   }
 
-  await Wishlist.deleteOne({ user: req.params.id });
+  await Wishlist.deleteMany({ user: req.params.id });
+  if (user.role === 'seller') {
+    await Product.deleteMany({ seller: req.params.id });
+  }
   await User.deleteOne({ _id: req.params.id });
 
   res.json({ message: 'User deleted successfully' });
@@ -635,9 +708,17 @@ export const userAction = asyncHandler(async (req: AuthRequest, res: Response) =
     user.isBanned = true;
     user.account_status = 'banned';
     user.banReason = 'Banned by admin';
+  } else if (action === 'unban') {
+    user.isBanned = false;
+    user.account_status = 'active';
+    user.banReason = undefined;
   } else if (action === 'remove') {
     user.account_status = 'removed';
     user.isBanned = true;
+  } else if (action === 'verify_kyc') {
+    user.kycStatus = 'verified';
+  } else if (action === 'reject_kyc') {
+    user.kycStatus = 'rejected';
   } else {
     res.status(400);
     throw new Error('Invalid action');
@@ -646,3 +727,37 @@ export const userAction = asyncHandler(async (req: AuthRequest, res: Response) =
   await user.save();
   res.json({ message: `User action '${action}' applied successfully` });
 });
+
+// @desc    Upload Seller KYC Document
+// @route   POST /api/users/kyc
+// @access  Private/Seller
+export const uploadKycDocument = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (user.role !== 'seller') {
+    res.status(403);
+    throw new Error('Only sellers can upload KYC documents');
+  }
+
+  if (!req.file) {
+    res.status(400);
+    throw new Error('Please upload a document');
+  }
+
+  user.kycDocument = `/uploads/${req.file.filename}`;
+  user.kycStatus = 'pending';
+  
+  await user.save();
+  
+  res.json({
+    message: 'KYC document uploaded successfully. Awaiting admin verification.',
+    kycStatus: user.kycStatus,
+    kycDocument: user.kycDocument,
+  });
+});
+

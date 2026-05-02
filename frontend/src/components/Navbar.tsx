@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
-import { ShoppingCart, User, LogOut, Search, Heart, Menu, X, ChevronDown, Moon, Sun, FileText } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Search, Heart, Menu, X, ChevronDown, Moon, Sun, FileText, Store, AlertTriangle } from 'lucide-react';
 import api from '@/utils/api';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
@@ -39,6 +39,7 @@ export default function Navbar() {
     try {
       await api.post('/users/logout');
       setUserInfo(null);
+      useStore.getState().clearCart(); // Clear the cart when user logs out
       setProfileMenuOpen(false);
       toast.success('Logged out successfully');
       router.push('/login');
@@ -63,7 +64,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-gray-100 dark:border-gray-800 transition-colors">
+    <nav className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-gray-100 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-8">
@@ -72,43 +73,7 @@ export default function Navbar() {
               FreshMart Grocery
             </Link>
 
-            {/* Desktop Nav Links */}
-            <div className="hidden lg:flex items-center space-x-6 ml-6 text-sm font-semibold">
-              <Link href="/" className={`hover:text-green-600 ${pathname === '/' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Home</Link>
-              
-              {!userInfo && (
-                <>
-                  <Link href="/login" className={`hover:text-green-600 ${pathname === '/login' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Login</Link>
-                  <Link href="/register" className={`hover:text-green-600 ${pathname === '/register' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Register</Link>
-                </>
-              )}
-
-              {userInfo?.role === 'customer' && (
-                <>
-                  <Link href="/stores" className={`hover:text-green-600 ${pathname === '/stores' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Stores</Link>
-                  <Link href="/profile" className={`hover:text-green-600 ${pathname === '/profile' && searchParams?.get('tab') !== 'addresses' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Orders</Link>
-                  <Link href="/profile?tab=addresses" className={`hover:text-green-600 ${searchParams?.get('tab') === 'addresses' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Addresses</Link>
-                  <Link href="/cart" className={`hover:text-green-600 ${pathname === '/cart' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Cart</Link>
-                  <button onClick={handleLogout} className="text-red-600 hover:text-red-700">Logout</button>
-                </>
-              )}
-
-              {userInfo?.role === 'seller' && (
-                <>
-                  <Link href="/seller" className={`hover:text-green-600 ${pathname === '/seller' && searchParams?.get('tab') !== 'orders' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Owner Panel</Link>
-                  <Link href="/seller?tab=orders" className={`hover:text-green-600 ${searchParams?.get('tab') === 'orders' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Orders</Link>
-                  <button onClick={handleLogout} className="text-red-600 hover:text-red-700">Logout</button>
-                </>
-              )}
-
-              {userInfo?.role === 'admin' && (
-                <>
-                  <Link href="/stores" className={`hover:text-green-600 ${pathname === '/stores' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Stores</Link>
-                  <Link href="/admin" className={`hover:text-green-600 ${pathname === '/admin' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600'}`}>Admin Panel</Link>
-                  <button onClick={handleLogout} className="text-red-600 hover:text-red-700">Logout</button>
-                </>
-              )}
-            </div>
+            {/* The top navbar is now clean and minimal. All links have been moved to the dropdown. */}
 
             {/* Search Bar */}
             <form onSubmit={handleSearch} className="hidden md:flex items-center">
@@ -118,7 +83,7 @@ export default function Navbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products..."
-                  className="w-72 px-4 py-2 pl-10 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm transition bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700"
+                  className="w-72 px-4 py-2 pl-10 rounded-xl border border-gray-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm transition bg-gray-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800"
                 />
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
@@ -161,13 +126,18 @@ export default function Navbar() {
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center text-gray-700 dark:text-gray-300 hover:text-green-600 transition font-medium gap-1.5"
+                  className="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition relative"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                    {userInfo.name[0].toUpperCase()}
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                      {userInfo.name.charAt(0).toUpperCase()}
+                    </div>
+                    {userInfo.role === 'seller' && (userInfo.warningCount || 0) > 0 && (
+                      <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"></span>
+                    )}
                   </div>
-                  <span className="hidden sm:inline text-sm">{userInfo.name.split(' ')[0]}</span>
-                  <ChevronDown size={14} className={`hidden sm:block transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+                  <span className="hidden sm:block text-left text-sm text-gray-700 dark:text-gray-300 font-medium">{userInfo.name.split(' ')[0]}</span>
+                  <ChevronDown size={14} className={`hidden sm:block text-gray-500 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Profile Dropdown */}
@@ -180,42 +150,87 @@ export default function Navbar() {
                         {userInfo.role}
                       </span>
                     </div>
+
                     <Link
-                      href={getDashboardLink()}
+                      href="/"
                       onClick={() => setProfileMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
-                      <User size={16} />
-                      {userInfo.role === 'admin' ? 'Admin Dashboard' : userInfo.role === 'seller' ? 'Seller Dashboard' : 'My Profile'}
+                      <span className="w-4 h-4 text-center">🏠</span>
+                      Home
                     </Link>
-                    {userInfo.role === 'customer' && (
+
+                    {userInfo.role === 'customer' || userInfo.role === 'admin' ? (
                       <Link
-                        href="/wishlist"
+                        href="/stores"
                         onClick={() => setProfileMenuOpen(false)}
                         className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                       >
-                        <Heart size={16} />
-                        My Wishlist
+                        <span className="w-4 h-4 text-center">🏪</span>
+                        Stores
+                      </Link>
+                    ) : null}
+
+                    {userInfo.role === 'seller' && (
+                      <Link
+                        href="/seller"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      >
+                        <Store size={16} />
+                        Owner Panel
                       </Link>
                     )}
+
+                    {userInfo.role === 'admin' && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      >
+                        <User size={16} />
+                        Admin Panel
+                      </Link>
+                    )}
+
                     <Link
                       href="/profile"
                       onClick={() => setProfileMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
-                      <ShoppingCart size={16} />
-                      My Orders
+                      <User size={16} />
+                      {userInfo.role === 'seller' ? 'Account Settings' : 'My Profile'}
                     </Link>
+
                     {userInfo.role === 'customer' && (
-                      <Link
-                        href="/reports"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                      >
-                        <FileText size={16} />
-                        My Reports
-                      </Link>
+                      <>
+                        <Link
+                          href="/profile?tab=orders"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        >
+                          <ShoppingCart size={16} />
+                          My Orders
+                        </Link>
+                        <Link
+                          href="/wishlist"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        >
+                          <Heart size={16} />
+                          My Wishlist
+                        </Link>
+                        <Link
+                          href="/reports"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        >
+                          <FileText size={16} />
+                          My Reports
+                        </Link>
+                      </>
                     )}
+
                     <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
                       <button
                         onClick={handleLogout}
@@ -285,7 +300,7 @@ export default function Navbar() {
                     ❤️ Wishlist
                   </Link>
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="text-center py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 transition">
-                    📦 Orders
+                    👤 Profile
                   </Link>
                   <Link href="/stores" onClick={() => setMobileMenuOpen(false)} className="text-center py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 transition">
                     🏪 Stores
@@ -293,6 +308,16 @@ export default function Navbar() {
                   {userInfo.role === 'customer' && (
                     <Link href="/reports" onClick={() => setMobileMenuOpen(false)} className="text-center py-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 transition">
                       📋 Reports
+                    </Link>
+                  )}
+                  {userInfo.role === 'seller' && (
+                    <Link href="/seller" onClick={() => setMobileMenuOpen(false)} className="text-center py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-sm font-medium text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition">
+                      🏬 Seller Dashboard
+                    </Link>
+                  )}
+                  {userInfo.role === 'admin' && (
+                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="text-center py-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-sm font-medium text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition">
+                      🛡️ Admin Panel
                     </Link>
                   )}
                   <button onClick={handleLogout} className="text-center py-3 bg-red-50 dark:bg-red-900/20 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition col-span-2">

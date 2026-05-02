@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import Order from '../models/Order';
 import Product from '../models/Product';
+import User from '../models/User';
 import asyncHandler from '../utils/asyncHandler';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import sendEmail from '../utils/sendEmail';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -56,7 +58,16 @@ export const addOrderItems = asyncHandler(async (req: AuthRequest, res: Response
   }
 
   // Server-side price calculation (NEVER trust client prices)
-  const calculatedShippingPrice = calculatedItemsPrice > 50 ? 0 : 5;
+  const sellerCharges = new Map<string, number>();
+  for (const item of validatedItems) {
+    const sellerId = item.seller.toString();
+    if (!sellerCharges.has(sellerId)) {
+      const seller = await User.findById(sellerId);
+      sellerCharges.set(sellerId, seller?.deliveryCharge ?? 5);
+    }
+  }
+  const calculatedShippingPrice = deliveryType === 'Pickup' ? 0 : Array.from(sellerCharges.values()).reduce((a, b) => a + b, 0);
+
   const calculatedTaxPrice = Number((0.05 * calculatedItemsPrice).toFixed(2));
   const calculatedTotalPrice = calculatedItemsPrice + calculatedShippingPrice + calculatedTaxPrice;
 
@@ -79,6 +90,20 @@ export const addOrderItems = asyncHandler(async (req: AuthRequest, res: Response
   });
 
   const createdOrder = await order.save();
+
+  // Notify sellers about new order (fire-and-forget)
+  const sellerIds = [...new Set(validatedItems.map((item: any) => item.seller.toString()))];
+  for (const sid of sellerIds) {
+    const sellerUser = await User.findById(sid);
+    if (sellerUser?.email) {
+      sendEmail({
+        email: sellerUser.email,
+        subject: '🛒 New Order Received - FreshMart',
+        message: `You have a new order #${createdOrder._id.toString().slice(-8).toUpperCase()}! Total: ₹${calculatedTotalPrice.toFixed(2)}. Log in to your seller dashboard to review and fulfill.`,
+      }).catch(() => {});
+    }
+  }
+
   res.status(201).json(createdOrder);
 });
 
@@ -149,9 +174,16 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
     const isSeller = order.orderItems.some((item: any) =>
       (item.seller?._id || item.seller)?.toString() === req.user._id.toString()
     );
+    const isBuyer = (order.user as any)._id?.toString() === req.user._id.toString() || order.user.toString() === req.user._id.toString();
+
     if (!isSeller && req.user.role !== 'admin') {
-      res.status(403);
-      throw new Error('Not authorized to update this order');
+      // Allow buyer to cancel only if order is still Pending
+      if (isBuyer && req.body.status === 'Cancelled' && order.status === 'Pending') {
+        // Allowed
+      } else {
+        res.status(403);
+        throw new Error('Not authorized to update this order');
+      }
     }
 
     // Validate status value
@@ -167,6 +199,28 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
       order.deliveredAt = new Date();
     }
     const updatedOrder = await order.save();
+
+    // Email customer about status change (fire-and-forget)
+    const customer = await User.findById(order.user._id || order.user);
+    if (customer?.email) {
+      const statusMessages: Record<string, string> = {
+        'Packed': 'Your order has been packed and is being prepared for dispatch.',
+        'Shipped': 'Your order is on its way! It has been shipped.',
+        'Delivered': 'Your order has been delivered. Enjoy your fresh groceries! 🎉',
+        'Ready for Pickup': 'Your order is ready for pickup at the store.',
+        'Picked Up': 'Your pickup order is complete. Thank you for shopping with us! 🎉',
+        'Cancelled': 'Your order has been cancelled.',
+      };
+      const msg = statusMessages[req.body.status];
+      if (msg) {
+        sendEmail({
+          email: customer.email,
+          subject: `📦 Order Update: ${req.body.status} - FreshMart`,
+          message: `Hi ${customer.name},\n\n${msg}\n\nOrder ID: #${order._id.toString().slice(-8).toUpperCase()}\nTotal: ₹${order.totalPrice.toFixed(2)}\n\nThank you for shopping with FreshMart!`,
+        }).catch(() => {});
+      }
+    }
+
     res.json(updatedOrder);
   } else {
     res.status(404);

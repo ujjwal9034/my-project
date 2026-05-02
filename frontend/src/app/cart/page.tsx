@@ -5,10 +5,13 @@ import { useStore } from '@/store/useStore';
 import { getImageUrl } from '@/utils/api';
 import { Trash2, ShoppingCart as CartIcon, Minus, Plus, ArrowLeft, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import toast from 'react-hot-toast';
+import { useState } from 'react';
 
 export default function Cart() {
-  const { cart, removeFromCart, addToCart } = useStore();
+  const { cart, removeFromCart, addToCart, clearCart } = useStore();
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
 
   const handleQtyChange = (item: any, qty: number) => {
     if (qty > 0) {
@@ -26,19 +29,50 @@ export default function Cart() {
 
   const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
   const totalPrice = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const shippingPrice = totalPrice > 50 ? 0 : 5;
+
+  const sellerCharges = new Map<string, number>();
+  cart.forEach(item => {
+    if (!sellerCharges.has(item.seller) || (item.sellerDeliveryCharge ?? 5) > sellerCharges.get(item.seller)!) {
+      sellerCharges.set(item.seller, item.sellerDeliveryCharge ?? 5);
+    }
+  });
+  const shippingPrice = Array.from(sellerCharges.values()).reduce((a, b) => a + b, 0);
+
+  const groupedCart = cart.reduce((acc, item) => {
+    const sellerId = item.seller;
+    if (!acc[sellerId]) {
+      acc[sellerId] = {
+        sellerName: item.sellerName || 'Unnamed Store',
+        items: [],
+        deliveryCharge: item.sellerDeliveryCharge ?? 5
+      };
+    }
+    acc[sellerId].items.push(item);
+    return acc;
+  }, {} as Record<string, { sellerName: string, items: any[], deliveryCharge: number }>);
 
   return (
     <div className="py-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <Link href="/" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-600 dark:text-gray-400">
-          <ArrowLeft size={20} />
-        </Link>
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Shopping Cart</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-600 dark:text-gray-400">
+            <ArrowLeft size={20} />
+          </Link>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Shopping Cart</h1>
+          {cart.length > 0 && (
+            <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm font-bold">
+              {totalItems} item{totalItems !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
         {cart.length > 0 && (
-          <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm font-bold">
-            {totalItems} item{totalItems !== 1 ? 's' : ''}
-          </span>
+          <button 
+            onClick={() => setShowClearCartModal(true)} 
+            className="flex items-center justify-center gap-2 text-sm font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-4 py-2 rounded-xl transition w-full sm:w-auto"
+          >
+            <Trash2 size={16} /> Empty Cart
+          </button>
         )}
       </div>
 
@@ -56,56 +90,66 @@ export default function Cart() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-2/3 space-y-3">
             <AnimatePresence>
-              {cart.map((item, index) => (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20, height: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.03 }}
-                  key={item.product}
-                  className="flex items-center bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
-                >
-                  <div className="w-20 h-20 relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                    <img
-                      src={getImageUrl(item.image)}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://placehold.co/100x100/e2e8f0/64748b?text=${encodeURIComponent(item.name)}`;
-                      }}
-                    />
+              {Object.entries(groupedCart).map(([sellerId, group]) => (
+                <div key={sellerId} className="mb-6">
+                  <div className="flex justify-between items-end mb-3 px-2">
+                    <h3 className="font-bold text-gray-800 dark:text-gray-200">{group.sellerName}</h3>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Delivery: ₹{group.deliveryCharge}</span>
                   </div>
-                  <div className="flex-grow px-4 min-w-0">
-                    <Link href={`/product/${item.product}`}>
-                      <h3 className="text-base font-bold text-gray-800 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition truncate">{item.name}</h3>
-                    </Link>
-                    <p className="text-green-600 dark:text-green-400 font-extrabold mt-1">₹{item.price.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Subtotal: ${(item.price * item.qty).toFixed(2)}</p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => handleQtyChange(item, item.qty - 1)}
-                        className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition"
+                  <div className="space-y-3">
+                    {group.items.map((item, index) => (
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20, height: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                        key={item.product}
+                        className="flex items-center bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
                       >
-                        <Minus size={14} />
-                      </button>
-                      <span className="px-4 text-sm font-bold text-gray-800 dark:text-white min-w-[2rem] text-center bg-white dark:bg-gray-800">{item.qty}</span>
-                      <button
-                        onClick={() => handleQtyChange(item, item.qty + 1)}
-                        className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => handleRemove(item)}
-                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                        <div className="w-20 h-20 relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                          <img
+                            src={getImageUrl(item.image)}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `https://placehold.co/100x100/e2e8f0/64748b?text=${encodeURIComponent(item.name)}`;
+                            }}
+                          />
+                        </div>
+                        <div className="flex-grow px-4 min-w-0">
+                          <Link href={`/product/${item.product}`}>
+                            <h3 className="text-base font-bold text-gray-800 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition truncate">{item.name}</h3>
+                          </Link>
+                          <p className="text-green-600 dark:text-green-400 font-extrabold mt-1">₹{item.price.toFixed(2)}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Subtotal: ₹{(item.price * item.qty).toFixed(2)}</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+                            <button
+                              onClick={() => handleQtyChange(item, item.qty - 1)}
+                              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="px-4 text-sm font-bold text-gray-800 dark:text-white min-w-[2rem] text-center bg-white dark:bg-gray-800">{item.qty}</span>
+                            <button
+                              onClick={() => handleQtyChange(item, item.qty + 1)}
+                              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => handleRemove(item)}
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </AnimatePresence>
           </div>
@@ -124,11 +168,6 @@ export default function Cart() {
                     {shippingPrice === 0 ? 'Free' : `₹${shippingPrice.toFixed(2)}`}
                   </span>
                 </div>
-                {shippingPrice > 0 && (
-                  <p className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1.5 rounded-lg">
-                    💡 Add ${(50 - totalPrice).toFixed(2)} more for free shipping
-                  </p>
-                )}
               </div>
               <div className="flex justify-between text-lg font-extrabold text-gray-900 dark:text-white mb-6">
                 <span>Total</span>
@@ -145,6 +184,18 @@ export default function Cart() {
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={showClearCartModal}
+        onClose={() => setShowClearCartModal(false)}
+        onConfirm={() => {
+          clearCart();
+          toast.success('Cart cleared');
+        }}
+        title="Empty Cart"
+        message="Are you sure you want to empty your entire cart? This action cannot be undone."
+        confirmText="Yes, Empty Cart"
+        isDanger={true}
+      />
     </div>
   );
 }

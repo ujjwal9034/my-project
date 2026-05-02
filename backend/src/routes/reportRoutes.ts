@@ -3,6 +3,7 @@ import {
   createReport,
   getMyReports,
   getAllReports,
+  getSellerReports,
   updateReport,
   dismissReport,
 } from '../controllers/reportController';
@@ -13,6 +14,9 @@ const router = express.Router();
 // Customer routes
 router.route('/').post(protect, createReport).get(protect, admin, getAllReports);
 router.route('/mine').get(protect, getMyReports);
+
+// Seller routes
+router.route('/seller').get(protect, getSellerReports);
 
 // Admin route — update status / notes
 router.route('/admin/:reportId/dismiss').post(protect, admin, dismissReport);

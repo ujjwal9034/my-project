@@ -18,8 +18,12 @@ import {
   forgotPassword,
   resetPassword,
   userAction,
+  syncCart,
+  getStores,
+  uploadKycDocument,
 } from '../controllers/userController';
-import { protect, admin } from '../middlewares/authMiddleware';
+import { protect, admin, seller } from '../middlewares/authMiddleware';
+import upload from '../config/upload';
 import { authLimiter, sensitiveLimiter } from '../middlewares/rateLimiter';
 import {
   registerValidation,
@@ -31,6 +35,7 @@ import {
 const router = express.Router();
 
 // Public routes
+router.route('/stores').get(getStores);
 router.route('/').post(authLimiter, registerValidation, registerUser).get(protect, admin, getUsers);
 router.post('/login', authLimiter, loginValidation, authUser);
 router.post('/logout', logoutUser);
@@ -44,6 +49,12 @@ router.route('/profile')
   .get(protect, getUserProfile)
   .put(protect, profileValidation, updateUserProfile)
   .delete(protect, deleteAccount);
+
+// Seller KYC
+router.post('/kyc', protect, seller, upload.single('document'), uploadKycDocument);
+
+// Cart
+router.route('/cart').put(protect, syncCart);
 
 // Password change
 router.put('/change-password', protect, sensitiveLimiter, changePasswordValidation, changePassword);

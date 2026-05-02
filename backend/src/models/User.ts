@@ -39,7 +39,14 @@ export interface IUser extends Document {
   deliveryAvailable?: boolean;
   pickupAvailable?: boolean;
   pickupSlots?: string[];
+  deliveryCharge?: number;
+  kycStatus?: 'pending' | 'verified' | 'rejected';
+  kycDocument?: string;
+  twoFactorEnabled?: boolean;
+  twoFactorCode?: string;
+  twoFactorCodeExpire?: Date;
   addresses: IAddress[];
+  cart?: any[];
   loginAttempts: number;
   lockUntil?: Date;
   lastLogin?: Date;
@@ -89,7 +96,14 @@ const UserSchema: Schema = new Schema(
     deliveryAvailable: { type: Boolean, default: true },
     pickupAvailable: { type: Boolean, default: true },
     pickupSlots: [{ type: String }],
+    deliveryCharge: { type: Number, default: 5 },
+    kycStatus: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+    kycDocument: { type: String },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorCode: { type: String },
+    twoFactorCodeExpire: { type: Date },
     addresses: [AddressSchema],
+    cart: { type: Array, default: [] },
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date },
     lastLogin: { type: Date },

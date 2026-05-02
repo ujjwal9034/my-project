@@ -7,6 +7,7 @@ import { useStore } from '@/store/useStore';
 import ProductCard from '@/components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, TrendingUp, Star, Zap, ArrowUp, Leaf, ShieldCheck, Truck, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const categories = ['All', 'Fruits', 'Vegetables', 'Dairy', 'Bakery', 'Meat', 'Beverages', 'Snacks', 'Grocery'];
 const sortOptions = [
@@ -20,10 +21,11 @@ const sortOptions = [
 function HomeContent() {
   const searchParams = useSearchParams();
   const keywordFromUrl = searchParams.get('keyword') || '';
+  const categoryFromUrl = searchParams.get('category') || '';
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl || 'All');
   const [sortBy, setSortBy] = useState('');
   const [keyword, setKeyword] = useState(keywordFromUrl);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -60,6 +62,12 @@ function HomeContent() {
   }, [keywordFromUrl]);
 
   useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, [categoryFromUrl]);
+
+  useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 500);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -83,12 +91,12 @@ function HomeContent() {
         },
         (error) => {
           console.error(error);
-          alert('Could not get location. Please enable location permissions.');
+          toast.error('Could not get location. Please enable location permissions.');
           setLocating(false);
         }
       );
     } else {
-      alert('Geolocation is not supported by your browser.');
+      toast.error('Geolocation is not supported by your browser.');
       setLocating(false);
     }
   };
@@ -262,7 +270,7 @@ function HomeContent() {
             {keyword && (
               <button
                 onClick={() => { setKeyword(''); setSelectedCategory('All'); }}
-                className="mt-4 text-green-600 font-semibold hover:underline"
+                className="mt-6 px-6 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition shadow-lg shadow-green-500/20"
               >
                 Clear search
               </button>

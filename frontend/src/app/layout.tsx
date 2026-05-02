@@ -5,6 +5,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ToastProvider from '@/components/ToastProvider';
+import WarningBanner from '@/components/WarningBanner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -12,6 +13,16 @@ export const metadata: Metadata = {
   title: 'FreshMarket - Local Grocery Delivery',
   description: 'A modern local grocery marketplace connecting you with nearby sellers. Fresh groceries delivered fast to your doorstep.',
   keywords: 'grocery, marketplace, fresh food, delivery, organic, local sellers',
+  manifest: '/manifest.json',
+  themeColor: '#16a34a',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'FreshMart',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({
@@ -22,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -41,6 +53,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col transition-colors duration-300`}>
         <ToastProvider />
         <Suspense fallback={<div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800"></div>}>
+          <WarningBanner />
           <Navbar />
         </Suspense>
         <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">

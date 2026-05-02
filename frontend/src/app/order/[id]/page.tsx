@@ -1,38 +1,183 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import api, { getImageUrl } from '@/utils/api';
 import Link from 'next/link';
-import { Package, Truck, CheckCircle2, ChevronLeft, MapPin, CreditCard, Receipt, Clock, ShoppingBag } from 'lucide-react';
+import { Package, Truck, CheckCircle2, ChevronLeft, MapPin, CreditCard, Receipt, Clock, ShoppingBag, XCircle, AlertCircle, RefreshCw, Download, RotateCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { motion } from 'framer-motion';
+import jsPDF from 'jspdf';
+import { requestNotificationPermission, sendNotification } from '@/utils/notifications';
 
 export default function OrderDetails() {
   const params = useParams();
   const router = useRouter();
-  const { userInfo } = useStore();
+  const { userInfo, addToCart, clearCart } = useStore();
   
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
-  useEffect(() => {
-    if (!userInfo) {
-      router.push('/login');
-      return;
-    }
-    fetchOrder();
-  }, [userInfo, params.id, router]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async (currentStatus?: string) => {
     try {
       const { data } = await api.get(`/orders/${params.id}`);
+      if (currentStatus && data.status !== currentStatus) {
+        sendNotification('Order Update!', {
+          body: `Your order #${data._id.slice(-8)} is now: ${data.status}`,
+        });
+        toast.success(`Order status updated to: ${data.status}`);
+      }
       setOrder(data);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!userInfo) {
+      router.push('/login');
+      return;
+    }
+    requestNotificationPermission();
+    fetchOrder();
+    // Real-time polling for active orders
+    const isActive = order && !['Delivered', 'Picked Up', 'Cancelled'].includes(order.status);
+    if (isActive) {
+      const interval = setInterval(() => fetchOrder(order.status), 15000);
+      return () => clearInterval(interval);
+    }
+  }, [userInfo, params.id, router, fetchOrder, order?.status]);
+
+  const cancelOrder = async () => {
+    try {
+      await api.put(`/orders/${order._id}/status`, { status: 'Cancelled' });
+      toast.success('Order cancelled successfully');
+      fetchOrder();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to cancel order');
+    }
+  };
+
+  const handleReorder = async () => {
+    setReordering(true);
+    try {
+      clearCart();
+      for (const item of order.orderItems) {
+        addToCart({
+          product: item.product,
+          name: item.name,
+          price: item.price,
+          qty: item.qty,
+          image: item.image,
+          seller: item.seller || '',
+          sellerName: '',
+        });
+      }
+      toast.success('Items added to cart!');
+      router.push('/cart');
+    } catch {
+      toast.error('Failed to reorder');
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const generateInvoice = () => {
+    if (!order) return;
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FreshMart Grocery', 20, 25);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text('Tax Invoice / Receipt', 20, 32);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
+    doc.text(`Invoice #${order._id.slice(-8).toUpperCase()}`, pageW - 20, 25, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, pageW - 20, 32, { align: 'right' });
+
+    // Divider
+    doc.setDrawColor(200);
+    doc.line(20, 38, pageW - 20, 38);
+
+    // Billing
+    let y = 46;
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.user?.name || 'Customer', 20, y + 6);
+    doc.text(order.shippingAddress?.address || '', 20, y + 12);
+    doc.text(`${order.shippingAddress?.city || ''}, ${order.shippingAddress?.postalCode || ''}`, 20, y + 18);
+
+    // Items Table Header
+    y = 80;
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, y - 4, pageW - 40, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Item', 22, y + 2);
+    doc.text('Qty', 120, y + 2);
+    doc.text('Price', 140, y + 2);
+    doc.text('Total', pageW - 22, y + 2, { align: 'right' });
+
+    // Items
+    y += 14;
+    doc.setFont('helvetica', 'normal');
+    for (const item of order.orderItems) {
+      doc.text(item.name.substring(0, 40), 22, y);
+      doc.text(String(item.qty), 122, y);
+      doc.text(`Rs.${item.price.toFixed(2)}`, 140, y);
+      doc.text(`Rs.${(item.qty * item.price).toFixed(2)}`, pageW - 22, y, { align: 'right' });
+      y += 8;
+    }
+
+    // Summary
+    y += 6;
+    doc.line(120, y, pageW - 20, y);
+    y += 8;
+    doc.text('Subtotal:', 120, y);
+    doc.text(`Rs.${order.itemsPrice.toFixed(2)}`, pageW - 22, y, { align: 'right' });
+    y += 7;
+    doc.text('Shipping:', 120, y);
+    doc.text(`Rs.${order.shippingPrice.toFixed(2)}`, pageW - 22, y, { align: 'right' });
+    y += 7;
+    doc.text('Tax:', 120, y);
+    doc.text(`Rs.${order.taxPrice.toFixed(2)}`, pageW - 22, y, { align: 'right' });
+    y += 3;
+    doc.line(120, y, pageW - 20, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Total:', 120, y);
+    doc.text(`Rs.${order.totalPrice.toFixed(2)}`, pageW - 22, y, { align: 'right' });
+
+    // Footer
+    y += 20;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(130);
+    doc.text('Thank you for shopping with FreshMart Grocery!', pageW / 2, y, { align: 'center' });
+    doc.text(`Payment Method: ${order.paymentMethod} | Status: ${order.isPaid ? 'Paid' : 'Pending'}`, pageW / 2, y + 5, { align: 'center' });
+
+    doc.save(`FreshMart_Invoice_${order._id.slice(-8).toUpperCase()}.pdf`);
+    toast.success('Invoice downloaded!');
   };
 
   if (loading) {
@@ -75,9 +220,26 @@ export default function OrderDetails() {
             <Clock size={14} /> Placed on {new Date(order.createdAt).toLocaleString()}
           </p>
         </div>
-        <div className="text-left sm:text-right w-full sm:w-auto p-4 sm:p-0 bg-gray-50 sm:bg-transparent dark:bg-gray-700/50 sm:dark:bg-transparent rounded-xl">
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-1 uppercase tracking-wider">Total Amount</p>
-          <p className="text-3xl font-extrabold text-gray-900 dark:text-white">₹{order.totalPrice.toFixed(2)}</p>
+        <div className="text-left sm:text-right w-full sm:w-auto p-4 sm:p-0 bg-gray-50 sm:bg-transparent dark:bg-gray-700/50 sm:dark:bg-transparent rounded-xl flex flex-col items-start sm:items-end">
+          <div className="mb-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold mb-1 uppercase tracking-wider">Total Amount</p>
+            <p className="text-3xl font-extrabold text-gray-900 dark:text-white">₹{order.totalPrice.toFixed(2)}</p>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {order.status === 'Pending' && order.user?._id === userInfo?._id && (
+              <button onClick={() => setShowCancelModal(true)} className="text-sm font-bold px-4 py-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition rounded-xl flex items-center gap-1 shadow-sm">
+                <XCircle size={16} /> Cancel
+              </button>
+            )}
+            {(order.status === 'Delivered' || order.status === 'Picked Up') && order.user?._id === userInfo?._id && (
+              <button onClick={handleReorder} disabled={reordering} className="text-sm font-bold px-4 py-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+                <RotateCcw size={16} className={reordering ? 'animate-spin' : ''} /> {reordering ? 'Adding...' : 'Reorder'}
+              </button>
+            )}
+            <button onClick={generateInvoice} className="text-sm font-bold px-4 py-2 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition rounded-xl flex items-center gap-1.5 shadow-sm">
+              <Download size={16} /> Invoice
+            </button>
+          </div>
         </div>
       </div>
 
@@ -194,6 +356,16 @@ export default function OrderDetails() {
           </div>
         </div>
       </div>
+      
+      <ConfirmationModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={cancelOrder}
+        title="Cancel Order"
+        message="Are you sure you want to cancel this pending order? This action cannot be undone."
+        confirmText="Yes, Cancel Order"
+        isDanger={true}
+      />
     </div>
   );
 }

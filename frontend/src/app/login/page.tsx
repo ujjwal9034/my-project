@@ -15,6 +15,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [twoFactorMode, setTwoFactorMode] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
   const router = useRouter();
   const setUserInfo = useStore((state) => state.setUserInfo);
 
@@ -24,8 +26,22 @@ export default function Login() {
     setError('');
 
     try {
-      const { data } = await api.post('/users/login', { email, password });
+      const payload: any = { email, password };
+      if (twoFactorMode) payload.twoFactorCode = twoFactorCode;
+
+      const { data } = await api.post('/users/login', payload);
+      
+      if (data.requires2FA) {
+        setTwoFactorMode(true);
+        toast.success(data.message);
+        setLoading(false);
+        return;
+      }
+
       setUserInfo(data);
+      if (data.cart) {
+        useStore.getState().setCart(data.cart);
+      }
       toast.success(`Welcome back, ${data.name}!`);
 
       // Fetch wishlist after login
@@ -52,7 +68,7 @@ export default function Login() {
       animate={{ opacity: 1, y: 0 }}
       className="flex justify-center items-center py-16"
     >
-      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+      <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800">
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">🥬</div>
           <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">Welcome Back</h2>
@@ -66,47 +82,65 @@ export default function Login() {
           </motion.div>
         )}
         
-        <form onSubmit={submitHandler} className="space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
-            <div className="relative">
+
+        <form onSubmit={submitHandler} className="space-y-6">
+          {twoFactorMode ? (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">2FA Code</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                type="text"
+                placeholder="Enter 6-digit code"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
                 required
-                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               />
-              <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <p className="text-xs text-gray-500 mt-2">Check your email for the login code.</p>
             </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Password</label>
-              <Link href="/forgot-password" className="text-xs text-green-600 hover:text-green-700 font-medium hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 pl-11 pr-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                required
-                placeholder="••••••••"
-              />
-              <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    required
+                    placeholder="you@example.com"
+                  />
+                  <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Password</label>
+                  <Link href="/forgot-password" className="text-xs text-green-600 hover:text-green-700 font-medium hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 pl-11 pr-11 rounded-xl border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    required
+                    placeholder="••••••••"
+                  />
+                  <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -115,9 +149,9 @@ export default function Login() {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Signing In...
+                {twoFactorMode ? 'Verifying...' : 'Signing In...'}
               </span>
-            ) : 'Sign In'}
+            ) : (twoFactorMode ? 'Verify 2FA' : 'Sign In')}
           </button>
         </form>
 

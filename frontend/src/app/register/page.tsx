@@ -80,7 +80,7 @@ export default function Register() {
       animate={{ opacity: 1, y: 0 }}
       className="flex justify-center items-center py-10"
     >
-      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+      <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800">
         <div className="text-center mb-6">
           <div className="text-4xl mb-3">🛒</div>
           <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">Create Account</h2>

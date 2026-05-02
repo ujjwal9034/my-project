@@ -4,6 +4,7 @@ export interface IReview {
   user: mongoose.Types.ObjectId;
   rating: number;
   comment: string;
+  photos?: string[];
 }
 
 export interface IProduct extends Document {
@@ -27,6 +28,7 @@ const ReviewSchema = new Schema(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true },
+    photos: [{ type: String }],
   },
   { timestamps: true }
 );

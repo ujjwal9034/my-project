@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 :root {
   --background: #F5F5F5;
   --foreground: #212121;
@@ -15,15 +25,15 @@
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card-bg: #1e293b;
-  --card-border: #334155;
-  --muted: #94a3b8;
-  --primary: #2E7D32;
-  --primary-hover: #1b5e20;
-  --accent: #FF6F00;
-  --accent-hover: #e65100;
+  --background: #020617; /* Deep Slate 950 */
+  --foreground: #f8fafc; /* Slate 50 */
+  --card-bg: #0f172a;    /* Slate 900 */
+  --card-border: #1e293b; /* Slate 800 */
+  --muted: #64748b;     /* Slate 400 */
+  --primary: #22c55e;   /* Green 500 */
+  --primary-hover: #16a34a;
+  --accent: #f59e0b;    /* Amber 500 */
+  --accent-hover: #d97706;
 }
 
 body {
@@ -32,21 +42,7 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode overrides for TailwindCSS components */
-.dark .bg-white { background-color: var(--card-bg) !important; }
-.dark .bg-gray-50 { background-color: #0f172a !important; }
-.dark .bg-gray-100 { background-color: #1e293b !important; }
-.dark .border-gray-100 { border-color: #334155 !important; }
-.dark .border-gray-200 { border-color: #475569 !important; }
-.dark .text-gray-900 { color: #f1f5f9 !important; }
-.dark .text-gray-800 { color: #e2e8f0 !important; }
-.dark .text-gray-700 { color: #cbd5e1 !important; }
-.dark .text-gray-600 { color: #94a3b8 !important; }
-.dark .text-gray-500 { color: #64748b !important; }
-.dark .text-gray-400 { color: #475569 !important; }
-.dark .bg-gray-900 { background-color: #020617 !important; }
-.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
-.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3) !important; }
+/* Tailwind native dark mode is used. Removed destructive !important overrides that were breaking backdrop-blurs and specific dark: variants */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import api from '@/utils/api';
 import Link from 'next/link';
-import { User, Mail, MapPin, Phone, Lock, Package, Trash2, Edit3, Settings, ShieldAlert, CreditCard, ChevronRight, ShoppingBag, Truck, Store, ReceiptText, IndianRupee, Check } from 'lucide-react';
+import { User, Mail, MapPin, Phone, Lock, Package, Trash2, Edit3, Settings, ShieldAlert, CreditCard, ChevronRight, ShoppingBag, Truck, Store, ReceiptText, IndianRupee, Check, X, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 // ── Status badge helper ────────────────────────────────────────────────────────
 const STATUS_STYLES: Record<string, string> = {
@@ -34,7 +35,8 @@ export default function Profile() {
 
   const [activeTab, setActiveTab] = useState<'profile'|'orders'|'security'>('profile');
   const [loading, setLoading] = useState(false);
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
   // Profile Form
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -43,6 +45,7 @@ export default function Profile() {
   // Password Form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   // Address
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -53,14 +56,16 @@ export default function Profile() {
   // Orders
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userInfo) {
       router.push('/login');
     } else {
-      setName(userInfo.name);
-      setEmail(userInfo.email);
+      setName(userInfo.name || '');
+      setEmail(userInfo.email || '');
       setPhone(userInfo.phone || '');
+      setTwoFactorEnabled(userInfo.twoFactorEnabled || false);
       fetchProfileData();
     }
   }, [userInfo, router]);
@@ -84,11 +89,21 @@ export default function Profile() {
     }
   };
 
+  const cancelOrder = async (orderId: string) => {
+    try {
+      await api.put(`/orders/${orderId}/status`, { status: 'Cancelled' });
+      toast.success('Order cancelled successfully');
+      fetchProfileData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to cancel order');
+    }
+  };
+
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.put('/users/profile', { name, email, phone });
+      const { data } = await api.put('/users/profile', { name, email, phone, twoFactorEnabled });
       setUserInfo(data);
       toast.success('Profile updated successfully');
     } catch (error: any) {
@@ -156,15 +171,22 @@ export default function Profile() {
   };
 
   const deleteAccount = async () => {
-    const pwd = prompt('To confirm account deletion, please enter your password:');
-    if (!pwd) return;
+    if (!deletePassword) {
+      toast.error('Please enter your password to confirm');
+      return;
+    }
+    setLoading(true);
     try {
-      await api.delete('/users/profile', { data: { password: pwd } });
+      await api.delete('/users/profile', { data: { password: deletePassword } });
       setUserInfo(null);
       router.push('/');
       toast.success('Account deleted forever. We are sad to see you go.');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete account');
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+      setDeletePassword('');
     }
   };
 
@@ -401,7 +423,7 @@ export default function Profile() {
                     visibleOrders.forEach((order) => {
                       const firstItem = order.orderItems?.[0];
                       const sellerId: string = firstItem?.seller?._id ?? firstItem?.seller ?? 'unknown';
-                      const sellerName: string = firstItem?.seller?.name ?? firstItem?.seller?.storeName ?? `Store #${sellerId.slice(-4)}`;
+                      const sellerName: string = firstItem?.seller?.storeName || 'Unnamed Store';
                       if (!grouped[sellerId]) grouped[sellerId] = { sellerName, orders: [] };
                       grouped[sellerId].orders.push(order);
                     });
@@ -471,6 +493,14 @@ export default function Profile() {
 
                                     {/* Delete (soft) + View link */}
                                     <div className="flex items-center gap-2">
+                                      {order.status === 'Pending' && (
+                                        <button
+                                          onClick={() => setCancelModalOrderId(order._id)}
+                                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition mr-2"
+                                        >
+                                          Cancel Order
+                                        </button>
+                                      )}
                                       <Link
                                         href={`/order/${order._id}`}
                                         className="text-xs font-bold text-green-600 dark:text-green-400 hover:underline flex items-center gap-1"
@@ -532,6 +562,36 @@ export default function Profile() {
               {/* SECURITY TAB */}
               {activeTab === 'security' && (
                 <div className="space-y-6">
+                  <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                      <Shield size={20} className="text-blue-500" /> Security Settings
+                    </h2>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+                      <div>
+                        <h4 className="font-bold text-gray-900 dark:text-white">Two-Factor Authentication</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Receive a code via email when signing in.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={twoFactorEnabled}
+                          onChange={(e) => {
+                            setTwoFactorEnabled(e.target.checked);
+                            api.put('/users/profile', { twoFactorEnabled: e.target.checked }).then(({data}) => {
+                              setUserInfo(data);
+                              toast.success(`2FA ${e.target.checked ? 'Enabled' : 'Disabled'}`);
+                            }).catch(() => {
+                              setTwoFactorEnabled(!e.target.checked);
+                              toast.error('Failed to update 2FA setting');
+                            });
+                          }}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Password Change */}
                   <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
@@ -553,12 +613,40 @@ export default function Profile() {
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="bg-red-50 dark:bg-red-900/20 p-8 rounded-3xl border border-red-100 dark:border-red-900/50">
-                    <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Danger Zone</h2>
-                    <p className="text-red-500/80 dark:text-red-400/80 text-sm mb-6">Once you delete your account, there is no going back. Please be certain.</p>
-                    <button onClick={deleteAccount} className="bg-red-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-700 transition">
-                      Delete My Account
-                    </button>
+                  <div className="bg-red-50 dark:bg-red-900/20 p-8 rounded-3xl border border-red-100 dark:border-red-900/50 relative overflow-hidden">
+                    <div className="relative z-10">
+                      <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Danger Zone</h2>
+                      <p className="text-red-500/80 dark:text-red-400/80 text-sm mb-6">Once you delete your account, there is no going back. Please be certain.</p>
+                      
+                      {!showDeleteModal ? (
+                        <button onClick={() => setShowDeleteModal(true)} className="bg-red-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-200 dark:shadow-red-900/20">
+                          Delete My Account
+                        </button>
+                      ) : (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-red-200 dark:border-red-900 shadow-xl max-w-md mt-4">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-gray-900 dark:text-white">Confirm Deletion</h3>
+                            <button onClick={() => { setShowDeleteModal(false); setDeletePassword(''); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">This action cannot be undone. All your data, orders, and addresses will be permanently removed.</p>
+                          <input 
+                            type="password" 
+                            placeholder="Enter your password to confirm" 
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900/50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-red-500 mb-4 outline-none transition"
+                          />
+                          <div className="flex gap-3">
+                            <button onClick={deleteAccount} disabled={loading || !deletePassword} className="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl hover:bg-red-700 transition disabled:opacity-50">
+                              {loading ? 'Deleting...' : 'Yes, Delete'}
+                            </button>
+                            <button onClick={() => { setShowDeleteModal(false); setDeletePassword(''); }} className="px-6 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition">
+                              Cancel
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -566,6 +654,17 @@ export default function Profile() {
           </AnimatePresence>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={!!cancelModalOrderId}
+        onClose={() => setCancelModalOrderId(null)}
+        onConfirm={() => {
+          if (cancelModalOrderId) cancelOrder(cancelModalOrderId);
+        }}
+        title="Cancel Order"
+        message="Are you sure you want to cancel this pending order? This action cannot be undone."
+        confirmText="Yes, Cancel Order"
+        isDanger={true}
+      />
     </div>
   );
 }

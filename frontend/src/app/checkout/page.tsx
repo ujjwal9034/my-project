@@ -35,7 +35,13 @@ export default function Checkout() {
 
   // Calculations
   const itemsPrice = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const shippingPrice = itemsPrice > 50 ? 0 : 5;
+  const sellerCharges = new Map<string, number>();
+  cart.forEach(item => {
+    if (!sellerCharges.has(item.seller) || (item.sellerDeliveryCharge ?? 5) > sellerCharges.get(item.seller)!) {
+      sellerCharges.set(item.seller, item.sellerDeliveryCharge ?? 5);
+    }
+  });
+  const shippingPrice = deliveryType === 'Pickup' ? 0 : Array.from(sellerCharges.values()).reduce((a, b) => a + b, 0);
   const taxPrice = Number((0.05 * itemsPrice).toFixed(2));
   const totalPrice = itemsPrice + shippingPrice + taxPrice;
 

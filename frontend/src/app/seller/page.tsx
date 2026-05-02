@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import api, { getImageUrl } from '@/utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Upload, X, Camera, Trash2, Edit3, Plus, TrendingUp, ShoppingBag, Save, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
+import { Package, Upload, X, Camera, Trash2, Edit3, Plus, TrendingUp, ShoppingBag, Save, MapPin, AlertTriangle, Bell, Eye, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function SellerDashboard() {
   const { userInfo, setUserInfo, sellerHiddenOrderIds, hideSellerOrder, seenOrderIds, markOrderSeen } = useStore();
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'reviews'>('products');
 
   // Store Settings
   const [storeName, setStoreName] = useState(userInfo?.storeName || '');
@@ -44,7 +46,12 @@ export default function SellerDashboard() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [productLoading, setProductLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState('');
+  const [kycFile, setKycFile] = useState<File | null>(null);
+  const [kycLoading, setKycLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const kycInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!userInfo) {
@@ -62,12 +69,14 @@ export default function SellerDashboard() {
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes, reportsRes] = await Promise.all([
         api.get('/orders/seller'),
         api.get('/products/seller/mine'),
+        api.get('/reports/seller')
       ]);
       setOrders(ordersRes.data);
       setProducts(productsRes.data);
+      setReports(reportsRes.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -158,7 +167,6 @@ export default function SellerDashboard() {
   };
 
   const deleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
     try {
       await api.delete(`/products/${id}`);
       toast.success('Product deleted successfully');
@@ -248,6 +256,32 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleKycUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kycFile) {
+      toast.error('Please select a document first');
+      return;
+    }
+    setKycLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('document', kycFile);
+      const { data } = await api.post('/users/kyc', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (userInfo) {
+        setUserInfo({ ...userInfo, kycStatus: data.kycStatus, kycDocument: data.kycDocument });
+      }
+      toast.success(data.message);
+      setKycFile(null);
+      if (kycInputRef.current) kycInputRef.current.value = '';
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to upload document');
+    } finally {
+      setKycLoading(false);
+    }
+  };
+
   const isWarnedOrBanned = userInfo?.isBanned || userInfo?.account_status === 'warned' || userInfo?.account_status === 'banned';
 
   return (
@@ -280,7 +314,11 @@ export default function SellerDashboard() {
         </div>
         <div className="mt-4 sm:mt-0 text-right">
           <p className="text-xl font-bold">{userInfo?.storeName || userInfo?.name}&apos;s Market</p>
-          <span className="inline-block bg-green-500 text-xs px-3 py-1 rounded-full uppercase tracking-widest font-bold mt-2">Active Seller</span>
+          <span className={`inline-block text-xs px-3 py-1 rounded-full uppercase tracking-widest font-bold mt-2 ${
+            userInfo?.isApproved ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
+          }`}>
+            {userInfo?.isApproved ? 'Active Seller' : 'Pending Approval'}
+          </span>
         </div>
       </div>
 
@@ -309,31 +347,150 @@ export default function SellerDashboard() {
         </div>
       </div>
 
+      {/* Analytics Section */}
+      {orders.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Monthly Revenue Chart */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <TrendingUp size={18} className="text-green-500" /> Revenue Trend
+            </h3>
+            <div className="flex items-end gap-2 sm:gap-3 h-40 sm:h-48">
+              {(() => {
+                const monthMap: { [key: string]: number } = {};
+                orders.forEach((o: any) => {
+                  const d = new Date(o.createdAt);
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  monthMap[key] = (monthMap[key] || 0) + (o.totalPrice || 0);
+                });
+                const entries = Object.entries(monthMap).sort().slice(-6);
+                const maxVal = Math.max(...entries.map(([, v]) => v), 1);
+                return entries.map(([month, revenue], i) => (
+                  <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                      ₹{revenue >= 1000 ? `${(revenue / 1000).toFixed(1)}k` : revenue.toFixed(0)}
+                    </span>
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${(revenue / maxVal) * 100}%` }}
+                      transition={{ duration: 0.6, delay: i * 0.1 }}
+                      className="w-full bg-gradient-to-t from-green-600 to-emerald-400 rounded-t-lg min-h-[4px]"
+                    />
+                    <span className="text-[9px] sm:text-[10px] font-semibold text-gray-400">{month.slice(5)}</span>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+
+          {/* Order Status Breakdown */}
+          <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <ShoppingBag size={18} className="text-blue-500" /> Order Status
+            </h3>
+            <div className="space-y-3">
+              {(() => {
+                const statusCounts: { [k: string]: number } = {};
+                orders.forEach((o: any) => { statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
+                const statusColors: { [k: string]: string } = {
+                  Pending: 'bg-yellow-500', Packed: 'bg-blue-500', Shipped: 'bg-indigo-500',
+                  Delivered: 'bg-green-500', 'Picked Up': 'bg-emerald-500', Cancelled: 'bg-red-500',
+                  'Ready for Pickup': 'bg-purple-500',
+                };
+                return Object.entries(statusCounts).map(([status, count]) => (
+                  <div key={status}>
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{status}</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{count}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(count / orders.length) * 100}%` }}
+                        transition={{ duration: 0.5 }}
+                        className={`h-full rounded-full ${statusColors[status] || 'bg-gray-400'}`}
+                      />
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+
+          {/* Top Selling Products */}
+          {products.length > 0 && (
+            <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                🏆 Top Selling Products
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {(() => {
+                  const productSales: { [k: string]: { name: string; qty: number; revenue: number } } = {};
+                  orders.forEach((o: any) => {
+                    o.orderItems?.forEach((item: any) => {
+                      const id = item.product || item.name;
+                      if (!productSales[id]) productSales[id] = { name: item.name, qty: 0, revenue: 0 };
+                      productSales[id].qty += item.qty;
+                      productSales[id].revenue += item.qty * item.price;
+                    });
+                  });
+                  return Object.values(productSales)
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .slice(0, 4)
+                    .map((p, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                        <span className="text-2xl font-extrabold text-gray-300 dark:text-gray-600 w-8">#{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{p.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{p.qty} sold · ₹{p.revenue.toFixed(0)}</p>
+                        </div>
+                      </div>
+                    ));
+                })()}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Tab Navigation */}
-      <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit transition-colors">
+      <div className="flex gap-1.5 sm:gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl overflow-x-auto scrollbar-hide transition-colors">
         <button
           onClick={() => setActiveTab('products')}
-          className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+          className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap ${
             activeTab === 'products' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
-          My Products
+          Products
         </button>
         <button
           onClick={() => setActiveTab('orders')}
-          className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+          className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'orders' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
-          Orders {orders.length > 0 && <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{orders.length}</span>}
+          Orders
+          {orders.filter(o => o.status === 'Pending').length > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {orders.filter(o => o.status === 'Pending').length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+          className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap ${
             activeTab === 'settings' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
-          Store Settings
+          Settings
+        </button>
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap ${
+            activeTab === 'reviews' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          }`}
+        >
+          Reviews
         </button>
       </div>
 
@@ -342,13 +499,25 @@ export default function SellerDashboard() {
         <div className="space-y-6">
           {/* Add Product Button */}
           {!showForm && (
-            <button
-              onClick={openAddForm}
-              className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition shadow-lg shadow-green-200 dark:shadow-green-900/30"
-            >
-              <Plus size={20} />
-              Add New Product
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={openAddForm}
+                disabled={!userInfo?.isApproved}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition shadow-lg ${
+                  userInfo?.isApproved 
+                    ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-200 dark:shadow-green-900/30' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                }`}
+              >
+                <Plus size={20} />
+                Add New Product
+              </button>
+              {!userInfo?.isApproved && (
+                <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                  <AlertTriangle size={16} /> Your store must be approved by an admin to add products.
+                </span>
+              )}
+            </div>
           )}
 
           {/* Add/Edit Product Form */}
@@ -464,6 +633,19 @@ export default function SellerDashboard() {
             )}
           </AnimatePresence>
 
+          {/* Product Search & Grid */}
+          {!showForm && products.length > 0 && (
+            <div className="mb-4">
+              <input
+                type="text"
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder="Search your products..."
+                className="w-full sm:w-80 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              />
+            </div>
+          )}
+
           {/* My Products Grid */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -477,7 +659,7 @@ export default function SellerDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((p: any) => (
+              {products.filter((p: any) => p.name.toLowerCase().includes(productSearch.toLowerCase())).map((p: any) => (
                 <motion.div
                   key={p._id}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -514,7 +696,7 @@ export default function SellerDashboard() {
                         <Edit3 size={14} /> Edit
                       </button>
                       <button
-                        onClick={() => deleteProduct(p._id)}
+                        onClick={() => setProductToDelete(p._id)}
                         className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold py-2 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
                       >
                         <Trash2 size={14} /> Delete
@@ -695,6 +877,45 @@ export default function SellerDashboard() {
                 <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" placeholder="e.g. FreshFarm Organics" />
               </div>
 
+              {/* KYC Section */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-600">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  <Shield className="text-blue-500" /> KYC Verification
+                </h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                    userInfo?.kycStatus === 'verified' ? 'bg-green-100 text-green-700' :
+                    userInfo?.kycStatus === 'rejected' ? 'bg-red-100 text-red-700' :
+                    userInfo?.kycStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-gray-200 text-gray-700'
+                  }`}>
+                    Status: {userInfo?.kycStatus || 'Not Submitted'}
+                  </span>
+                </div>
+                
+                {userInfo?.kycStatus !== 'verified' && (
+                  <form onSubmit={handleKycUpload} className="space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Upload an official ID (Passport, Driving License, etc.) to verify your store and gain the "Verified Seller" badge.
+                    </p>
+                    <input 
+                      type="file" 
+                      accept="image/*,.pdf" 
+                      ref={kycInputRef}
+                      onChange={(e) => setKycFile(e.target.files?.[0] || null)}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={!kycFile || kycLoading}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50"
+                    >
+                      {kycLoading ? 'Uploading...' : 'Submit Document'}
+                    </button>
+                  </form>
+                )}
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <button type="button" onClick={updateSellerLocation} disabled={storeLocating} className="flex-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-bold px-4 py-3 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition flex items-center justify-center gap-2">
                   <MapPin size={18} /> {storeLocating ? 'Locating...' : 'Use My Current Location'}
@@ -803,20 +1024,111 @@ export default function SellerDashboard() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">No time slots added.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">No time slots added. Use the input above.</p>
                   )}
                 </div>
               )}
 
               <div className="pt-4">
-                <button type="button" onClick={handleUpdateStoreSettings} disabled={storeSettingsLoading} className="w-full sm:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition disabled:opacity-50">
-                  {storeSettingsLoading ? 'Saving...' : 'Save Settings'}
+                <button type="button" onClick={handleUpdateStoreSettings} disabled={storeSettingsLoading} className="w-full sm:w-auto bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-green-200 dark:shadow-green-900/30">
+                  <Save size={18} /> {storeSettingsLoading ? 'Saving...' : 'Save All Settings'}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* WARNINGS & REVIEWS TAB */}
+      {activeTab === 'reviews' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <AlertTriangle size={20} className="text-yellow-500" /> Store Warnings & Reviews
+            </h2>
+            
+            {userInfo?.warningCount ? (
+              <div className="mb-8 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-5 rounded-r-2xl flex items-start gap-3">
+                <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-red-800 dark:text-red-200 font-bold text-lg mb-1">Warning Count: {userInfo.warningCount}</h3>
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Your store has received official warnings from the admin. Too many warnings may result in account suspension. Please review customer complaints below and improve your service.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2].map((n) => <div key={n} className="h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Eye size={24} className="text-gray-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No reports yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">You haven't received any reviews or complaints.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reports.map((r: any) => (
+                  <div key={r._id} className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-200 dark:border-gray-600">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                          r.type === 'complaint'
+                            ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                            : 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+                        }`}>
+                          {r.type}
+                        </span>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                          r.status === 'resolved' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:border-green-800' :
+                          r.status === 'dismissed' ? 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:border-gray-600' :
+                          'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800'
+                        }`}>
+                          {r.status}
+                        </span>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        {new Date(r.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed mb-3">
+                      "{r.message}"
+                    </p>
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-600 pt-3">
+                      <span>Customer: <strong className="text-gray-700 dark:text-gray-300">{r.user?.name || 'Unknown'}</strong></span>
+                      <span>Order: <strong className="text-gray-700 dark:text-gray-300">#{r.order?._id?.slice(-8).toUpperCase()}</strong></span>
+                      {r.rating && <span>Rating: <strong className="text-yellow-500">{r.rating}/5</strong></span>}
+                    </div>
+                    {r.adminNotes && (
+                      <div className="mt-3 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                        <p className="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-1">Admin Response</p>
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300">{r.adminNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <ConfirmationModal
+        isOpen={!!productToDelete}
+        onClose={() => setProductToDelete(null)}
+        onConfirm={() => {
+          if (productToDelete) deleteProduct(productToDelete);
+        }}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Yes, Delete Product"
+        isDanger={true}
+      />
     </div>
   );
 }

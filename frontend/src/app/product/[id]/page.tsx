@@ -5,21 +5,24 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api, { getImageUrl } from '@/utils/api';
 import { useStore } from '@/store/useStore';
-import { Star, ShoppingCart, Minus, Plus, ArrowLeft, Shield, Truck, Package, Heart, User, Clock } from 'lucide-react';
+import { Star, ShoppingCart, Minus, Plus, ArrowLeft, Shield, Truck, Package, Heart, User, Clock, ImagePlus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import ReplaceCartModal from '@/components/ReplaceCartModal';
 
 export default function ProductDetails() {
   const params = useParams();
   const router = useRouter();
-  const { addToCart, userInfo, addRecentlyViewed, wishlist, toggleWishlistItem } = useStore();
+  const { addToCart, userInfo, addRecentlyViewed, wishlist, toggleWishlistItem, cart, updateCartQty, removeFromCart, clearCart } = useStore();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState('description');
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -39,17 +42,34 @@ export default function ProductDetails() {
   };
 
   const handleAddToCart = () => {
+    const sellerId = typeof product.seller === 'object' ? product.seller._id : product.seller;
+    const sellerName = typeof product.seller === 'object' ? (product.seller.storeName || 'Unnamed Store') : 'Unnamed Store';
+
+    // Single-store restriction check
+    if (cart.length > 0) {
+      const existingSeller = cart[0].seller;
+      if (existingSeller !== sellerId) {
+        setShowReplaceModal(true);
+        return;
+      }
+    }
+
+    executeAddToCart(sellerId, sellerName);
+  };
+
+  const executeAddToCart = (sellerId: string, sellerName: string) => {
     addToCart({
       product: product._id,
       name: product.name,
       price: product.price,
       qty,
       image: product.imageUrl,
-      seller: typeof product.seller === 'object' ? product.seller._id : product.seller,
+      seller: sellerId,
+      sellerName: sellerName,
       sellerPickupSlots: typeof product.seller === 'object' ? product.seller.pickupSlots : undefined,
+      sellerDeliveryCharge: typeof product.seller === 'object' ? (product.seller.deliveryCharge ?? 5) : 5,
     });
     toast.success('Added to cart');
-    router.push('/cart');
   };
 
   const handleWishlist = async () => {
@@ -81,10 +101,18 @@ export default function ProductDetails() {
     }
     setReviewLoading(true);
     try {
-      await api.post(`/products/${params.id}/reviews`, { rating, comment });
+      const formData = new FormData();
+      formData.append('rating', rating.toString());
+      formData.append('comment', comment);
+      reviewPhotos.forEach(photo => formData.append('photos', photo));
+
+      await api.post(`/products/${params.id}/reviews`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       toast.success('Review submitted successfully!');
       setRating(0);
       setComment('');
+      setReviewPhotos([]);
       fetchProduct();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to submit review');
@@ -110,6 +138,7 @@ export default function ProductDetails() {
   if (!product) return null;
 
   const isInWishlist = wishlist.includes(product._id);
+  const cartItem = cart.find(x => x.product === product._id);
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
@@ -152,9 +181,22 @@ export default function ProductDetails() {
             <span className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-3 py-1 rounded-lg">
               {product.category}
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-              Sold by: {product.seller?.storeName || product.seller?.name || 'Local Seller'}
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1.5">
+              Store: <span className="font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">{product.seller?.storeName || 'Unnamed Store'} {product.seller?.isApproved && <span title="Verified Seller" className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 p-0.5 rounded-full"><Shield size={12} className="fill-current" /></span>}</span>
             </span>
+          </div>
+          
+          <div className="flex gap-2 mb-4">
+            {product.seller?.deliveryAvailable && (
+              <span className="text-xs font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded-md flex items-center gap-1">
+                <Truck size={12} /> Delivery (₹{product.seller?.deliveryCharge ?? 5})
+              </span>
+            )}
+            {product.seller?.pickupAvailable && (
+              <span className="text-xs font-bold bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-1 rounded-md flex items-center gap-1">
+                <Package size={12} /> Store Pickup
+              </span>
+            )}
           </div>
 
           <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight">{product.name}</h1>
@@ -181,23 +223,63 @@ export default function ProductDetails() {
                   {product.stock} Available
                 </span>
               </div>
-              <div className="flex gap-4">
-                <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-l-xl">
-                    <Minus size={18} />
-                  </button>
-                  <span className="px-6 font-bold text-lg dark:text-white">{qty}</span>
-                  <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-r-xl">
-                    <Plus size={18} />
+              
+              {cartItem ? (
+                <div className="flex gap-4">
+                  <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800">
+                    <button 
+                      onClick={() => {
+                        if (cartItem.qty === 1) {
+                          removeFromCart(product._id);
+                          toast.success('Removed from cart');
+                        } else {
+                          updateCartQty(product._id, cartItem.qty - 1);
+                        }
+                      }} 
+                      className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-l-xl"
+                    >
+                      <Minus size={18} />
+                    </button>
+                    <span className="px-6 font-bold text-lg dark:text-white">{cartItem.qty}</span>
+                    <button 
+                      onClick={() => {
+                        if (cartItem.qty < product.stock) {
+                          updateCartQty(product._id, cartItem.qty + 1);
+                        } else {
+                          toast.error(`Only ${product.stock} items available`);
+                        }
+                      }} 
+                      className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-r-xl"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => router.push('/cart')}
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition"
+                  >
+                    View Cart
                   </button>
                 </div>
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white font-bold rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition active:scale-95"
-                >
-                  <ShoppingCart size={20} /> Add to Cart
-                </button>
-              </div>
+              ) : (
+                <div className="flex gap-4">
+                  <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800">
+                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-l-xl">
+                      <Minus size={18} />
+                    </button>
+                    <span className="px-6 font-bold text-lg dark:text-white">{qty}</span>
+                    <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-r-xl">
+                      <Plus size={18} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white font-bold rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition active:scale-95"
+                  >
+                    <ShoppingCart size={20} /> Add to Cart
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-2xl mb-8 border border-red-100 dark:border-red-800 flex items-center gap-3">
@@ -271,6 +353,45 @@ export default function ProductDetails() {
                       rows={3}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none resize-none transition"
                     />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <ImagePlus size={18} /> Add Photos (Max 3)
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            multiple 
+                            className="hidden" 
+                            onChange={(e) => {
+                              if (e.target.files) {
+                                const newFiles = Array.from(e.target.files);
+                                if (reviewPhotos.length + newFiles.length > 3) {
+                                  toast.error('Maximum 3 photos allowed');
+                                  return;
+                                }
+                                setReviewPhotos([...reviewPhotos, ...newFiles]);
+                              }
+                            }} 
+                          />
+                        </label>
+                      </div>
+                      {reviewPhotos.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {reviewPhotos.map((photo, index) => (
+                            <div key={index} className="relative group">
+                              <img src={URL.createObjectURL(photo)} alt="preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                              <button 
+                                type="button"
+                                onClick={() => setReviewPhotos(reviewPhotos.filter((_, i) => i !== index))}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="submit"
                       disabled={reviewLoading}
@@ -308,6 +429,13 @@ export default function ProductDetails() {
                         </span>
                       </div>
                       <p className="text-gray-600 dark:text-gray-300 ml-13 pl-13 mt-2">{r.comment}</p>
+                      {r.photos && r.photos.length > 0 && (
+                        <div className="flex gap-2 ml-13 pl-13 mt-3 flex-wrap">
+                          {r.photos.map((photo: string, index: number) => (
+                            <img key={index} src={getImageUrl(photo)} alt="Review photo" className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition" />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
@@ -316,6 +444,18 @@ export default function ProductDetails() {
           )}
         </div>
       </div>
+      <ReplaceCartModal
+        isOpen={showReplaceModal}
+        onClose={() => setShowReplaceModal(false)}
+        onConfirm={() => {
+          clearCart();
+          setShowReplaceModal(false);
+          const sellerId = typeof product.seller === 'object' ? product.seller._id : product.seller;
+          const sellerName = typeof product.seller === 'object' ? (product.seller.storeName || 'Unnamed Store') : 'Unnamed Store';
+          executeAddToCart(sellerId, sellerName);
+        }}
+        newStoreName={typeof product.seller === 'object' ? (product.seller.storeName || 'Unnamed Store') : 'Unnamed Store'}
+      />
     </div>
   );
 }
