@@ -719,6 +719,8 @@ export const userAction = asyncHandler(async (req: AuthRequest, res: Response) =
     user.kycStatus = 'verified';
   } else if (action === 'reject_kyc') {
     user.kycStatus = 'rejected';
+  } else if (action === 'undo_kyc') {
+    user.kycStatus = 'pending';
   } else {
     res.status(400);
     throw new Error('Invalid action');

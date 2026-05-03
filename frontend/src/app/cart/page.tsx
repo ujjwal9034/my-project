@@ -79,7 +79,7 @@ export default function Cart() {
       {cart.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="bg-white dark:bg-gray-800 p-12 text-center rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <CartIcon size={64} className="mx-auto text-gray-200 dark:text-gray-600 mb-4" />
+          <CartIcon size={64} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
           <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">Your cart is empty</h2>
           <p className="text-gray-500 dark:text-gray-400 mb-6">Looks like you haven&apos;t added any items to the cart yet.</p>
           <Link href="/" className="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition shadow-lg shadow-green-200 dark:shadow-green-900/30">

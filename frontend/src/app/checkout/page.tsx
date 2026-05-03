@@ -78,15 +78,21 @@ export default function Checkout() {
       // Validate cart items exist on the server
       const validateCart = async () => {
         setIsValidating(true);
+        let hasInvalidItems = false;
         try {
           for (const item of cart) {
-            // Using absolute paths to ensure proxy works correctly
-            await api.get(`/products/${item.product}`);
+            try {
+              // Using absolute paths to ensure proxy works correctly
+              await api.get(`/products/${item.product}`);
+            } catch (err: any) {
+              if (err.response?.status === 404 || err.response?.status === 400 || err.message.includes('CastError')) {
+                useStore.getState().removeFromCart(item.product);
+                hasInvalidItems = true;
+              }
+            }
           }
-        } catch (error: any) {
-          if (error.response?.status === 404) {
-            toast.error('Some items in your cart are no longer available.');
-            // Don't clear everything, just warn
+          if (hasInvalidItems) {
+            toast.error('Some items in your cart were no longer available and have been removed.');
           }
         } finally {
           setIsValidating(false);

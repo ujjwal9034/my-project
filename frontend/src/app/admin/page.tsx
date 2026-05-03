@@ -21,13 +21,12 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<any[]>([]);
   const [recentActions, setRecentActions] = useState<any[]>([]);
   const [adminNotesInput, setAdminNotesInput] = useState<{ [id: string]: string }>({});
-  const [actionModal, setActionModal] = useState<{ isOpen: boolean; userId: string; action: 'warning' | 'ban' | 'unban' | 'remove' | 'delete' | 'verify_kyc' | 'reject_kyc' | null; userName: string; }>({ isOpen: false, userId: '', action: null, userName: '' });
+  const [actionModal, setActionModal] = useState<{ isOpen: boolean; userId: string; action: 'warning' | 'ban' | 'unban' | 'remove' | 'delete' | 'verify_kyc' | 'reject_kyc' | 'undo_kyc' | null; userName: string; }>({ isOpen: false, userId: '', action: null, userName: '' });
   const [userSearch, setUserSearch] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   
   // Base URL config
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
-
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -91,11 +90,11 @@ export default function AdminDashboard() {
     localStorage.setItem('adminRecentActions', JSON.stringify(updated));
   };
 
-  const handleUserAction = async (userId: string, action: 'warning' | 'ban' | 'unban' | 'remove' | 'verify_kyc' | 'reject_kyc', userName: string) => {
+  const handleUserAction = async (userId: string, action: 'warning' | 'ban' | 'unban' | 'remove' | 'verify_kyc' | 'reject_kyc' | 'undo_kyc', userName: string) => {
     setActionLoadingId(userId);
     try {
       await api.post(`/users/admin/${userId}/action`, { action });
-      toast.success(`User ${action} successful`);
+      toast.success(`User ${action.replace('_', ' ')} successful`);
       recordAction(userName, action, `Applied ${action} to user`);
       fetchData();
     } catch (error: any) {
@@ -430,6 +429,9 @@ export default function AdminDashboard() {
                               <button onClick={() => setActionModal({ isOpen: true, userId: u._id, action: 'reject_kyc', userName: u.name })} className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs font-bold transition">Reject KYC</button>
                             </>
                           )}
+                          {u.role === 'seller' && (u.kycStatus === 'verified' || u.kycStatus === 'rejected') && (
+                            <button onClick={() => setActionModal({ isOpen: true, userId: u._id, action: 'undo_kyc', userName: u.name })} className="px-3 py-1 bg-gray-50 text-gray-600 hover:bg-gray-200 rounded text-xs font-bold transition">Undo KYC</button>
+                          )}
                           {u._id !== userInfo?._id && u.account_status !== 'banned' && u.account_status !== 'removed' && !u.isBanned && (
                             <>
                               <button onClick={() => setActionModal({ isOpen: true, userId: u._id, action: 'warning', userName: u.name })} className="px-3 py-1 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded text-xs font-bold transition">Warn</button>
@@ -642,6 +644,7 @@ export default function AdminDashboard() {
                 actionModal.action === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600' :
                 actionModal.action === 'unban' ? 'bg-green-50 dark:bg-green-900/20 text-green-600' :
                 actionModal.action === 'verify_kyc' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' :
+                actionModal.action === 'undo_kyc' ? 'bg-gray-100 dark:bg-gray-800 text-gray-600' :
                 'bg-red-50 dark:bg-red-900/20 text-red-600'
               }`}>
                 <div className="flex justify-between items-start">
@@ -656,7 +659,7 @@ export default function AdminDashboard() {
               
               <div className="p-6">
                 <p className="text-gray-700 dark:text-gray-300 mb-6">
-                  Are you sure you want to <strong>{actionModal.action === 'verify_kyc' ? 'verify KYC for' : actionModal.action === 'reject_kyc' ? 'reject KYC for' : actionModal.action}</strong> user <span className="font-bold text-gray-900 dark:text-white">"{actionModal.userName}"</span>? 
+                  Are you sure you want to <strong>{actionModal.action === 'verify_kyc' ? 'verify KYC for' : actionModal.action === 'reject_kyc' ? 'reject KYC for' : actionModal.action === 'undo_kyc' ? 'undo KYC for' : actionModal.action}</strong> user <span className="font-bold text-gray-900 dark:text-white">"{actionModal.userName}"</span>? 
                   {actionModal.action === 'delete' && " This action is irreversible and will permanently destroy all their data."}
                 </p>
                 <div className="flex gap-3 justify-end">
@@ -672,10 +675,11 @@ export default function AdminDashboard() {
                       actionModal.action === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20' :
                       actionModal.action === 'unban' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' :
                       actionModal.action === 'verify_kyc' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' :
+                      actionModal.action === 'undo_kyc' ? 'bg-gray-600 hover:bg-gray-700 shadow-gray-600/20' :
                       'bg-red-600 hover:bg-red-700 shadow-red-600/20'
                     }`}
                   >
-                    Yes, {actionModal.action === 'warning' ? 'Warn' : actionModal.action === 'unban' ? 'Unban' : actionModal.action === 'delete' ? 'Delete' : actionModal.action === 'remove' ? 'Remove' : actionModal.action === 'verify_kyc' ? 'Verify KYC for' : actionModal.action === 'reject_kyc' ? 'Reject KYC for' : 'Ban'} User
+                    Yes, {actionModal.action === 'warning' ? 'Warn' : actionModal.action === 'unban' ? 'Unban' : actionModal.action === 'delete' ? 'Delete' : actionModal.action === 'remove' ? 'Remove' : actionModal.action === 'verify_kyc' ? 'Verify KYC for' : actionModal.action === 'reject_kyc' ? 'Reject KYC for' : actionModal.action === 'undo_kyc' ? 'Undo KYC for' : 'Ban'} User
                   </button>
                 </div>
               </div>
