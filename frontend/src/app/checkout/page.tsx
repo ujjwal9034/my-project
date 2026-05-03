@@ -60,8 +60,24 @@ export default function Checkout() {
       router.push('/login?redirect=/checkout');
     } else if (cart.length === 0 && !success) {
       router.push('/cart');
+    } else if (cart.length > 0 && !success) {
+      // Validate cart items exist on the server (important for ephemeral DBs like Render free tier)
+      const validateCart = async () => {
+        try {
+          for (const item of cart) {
+            await api.get(`/products/${item.product}`);
+          }
+        } catch (error: any) {
+          if (error.response?.status === 404) {
+            toast.error('Some items in your cart are no longer available and have been removed.');
+            clearCart();
+            router.push('/cart');
+          }
+        }
+      };
+      validateCart();
     }
-  }, [userInfo, cart.length, router, success]);
+  }, [userInfo, cart.length, router, success, cart, clearCart]);
 
   useEffect(() => {
     if (userInfo && !success) {
@@ -334,7 +350,7 @@ export default function Checkout() {
                           <div className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 space-y-4">
                             <div>
                               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Card Number</label>
-                              <input type="text" placeholder="0000 0000 0000 0000" maxLength={19} value={cardDetails.number} onChange={e => setCardDetails({...cardDetails, number: e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '₹1 ').trim()})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
+                              <input type="text" placeholder="0000 0000 0000 0000" maxLength={19} value={cardDetails.number} onChange={e => setCardDetails({...cardDetails, number: e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim()})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>

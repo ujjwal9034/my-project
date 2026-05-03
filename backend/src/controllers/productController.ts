@@ -164,10 +164,12 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
     throw new Error('Please provide all required product fields');
   }
   
-  // If a file was uploaded via multer, use its path
+  // Handle image upload (local or cloudinary)
   let imageUrl = '/images/sample.jpg';
   if (req.file) {
-    imageUrl = `/uploads/${req.file.filename}`;
+    // If using Cloudinary, req.file.path is the full URL
+    // If using diskStorage, req.file.filename is the local name
+    imageUrl = (req.file as any).path || `/uploads/${req.file.filename}`;
   } else if (req.body.image) {
     imageUrl = req.body.image;
   }
@@ -215,7 +217,7 @@ export const updateProduct = asyncHandler(async (req: AuthRequest, res: Response
 
     // Handle image update
     if (req.file) {
-      product.imageUrl = `/uploads/${req.file.filename}`;
+      product.imageUrl = (req.file as any).path || `/uploads/${req.file.filename}`;
     } else if (req.body.image) {
       product.imageUrl = req.body.image;
     }
