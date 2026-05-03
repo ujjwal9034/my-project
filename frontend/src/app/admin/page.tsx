@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
-import api from '@/utils/api';
+import api, { getImageUrl } from '@/utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, ShoppingBag, TrendingUp, DollarSign, ShieldCheck, Ban, Check, X, Eye, Store, Clock, AlertCircle, History, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -412,7 +412,7 @@ export default function AdminDashboard() {
                         {u.banReason && <div className="text-xs text-red-500 mt-1">Reason: {u.banReason}</div>}
                         {u.role === 'seller' && u.kycStatus === 'pending' && u.kycDocument && (
                           <div className="mt-2 text-[10px]">
-                            <a href={`http://localhost:5000${u.kycDocument}`} target="_blank" rel="noreferrer" className="text-blue-500 underline">View KYC Doc</a>
+                            <a href={getImageUrl(u.kycDocument)} target="_blank" rel="noreferrer" className="text-blue-500 underline">View KYC Doc</a>
                           </div>
                         )}
                       </td>
@@ -641,6 +641,7 @@ export default function AdminDashboard() {
               <div className={`p-6 ${
                 actionModal.action === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600' :
                 actionModal.action === 'unban' ? 'bg-green-50 dark:bg-green-900/20 text-green-600' :
+                actionModal.action === 'verify_kyc' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' :
                 'bg-red-50 dark:bg-red-900/20 text-red-600'
               }`}>
                 <div className="flex justify-between items-start">
@@ -655,7 +656,7 @@ export default function AdminDashboard() {
               
               <div className="p-6">
                 <p className="text-gray-700 dark:text-gray-300 mb-6">
-                  Are you sure you want to <strong>{actionModal.action}</strong> user <span className="font-bold text-gray-900 dark:text-white">"{actionModal.userName}"</span>? 
+                  Are you sure you want to <strong>{actionModal.action === 'verify_kyc' ? 'verify KYC for' : actionModal.action === 'reject_kyc' ? 'reject KYC for' : actionModal.action}</strong> user <span className="font-bold text-gray-900 dark:text-white">"{actionModal.userName}"</span>? 
                   {actionModal.action === 'delete' && " This action is irreversible and will permanently destroy all their data."}
                 </p>
                 <div className="flex gap-3 justify-end">
@@ -670,10 +671,11 @@ export default function AdminDashboard() {
                     className={`px-5 py-2.5 rounded-xl font-bold text-white transition shadow-lg ${
                       actionModal.action === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20' :
                       actionModal.action === 'unban' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' :
+                      actionModal.action === 'verify_kyc' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' :
                       'bg-red-600 hover:bg-red-700 shadow-red-600/20'
                     }`}
                   >
-                    Yes, {actionModal.action === 'warning' ? 'Warn' : actionModal.action === 'unban' ? 'Unban' : actionModal.action === 'delete' ? 'Delete' : actionModal.action === 'remove' ? 'Remove' : 'Ban'} User
+                    Yes, {actionModal.action === 'warning' ? 'Warn' : actionModal.action === 'unban' ? 'Unban' : actionModal.action === 'delete' ? 'Delete' : actionModal.action === 'remove' ? 'Remove' : actionModal.action === 'verify_kyc' ? 'Verify KYC for' : actionModal.action === 'reject_kyc' ? 'Reject KYC for' : 'Ban'} User
                   </button>
                 </div>
               </div>

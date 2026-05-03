@@ -25,6 +25,11 @@ export default function Navbar() {
     }
   }, [darkMode]);
 
+  // Wake up backend immediately when frontend loads (useful for Render free tier)
+  useEffect(() => {
+    api.get('/health').catch(() => {});
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
