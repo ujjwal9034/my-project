@@ -39,7 +39,20 @@ export default function Login() {
       }
 
       setUserInfo(data);
-      if (data.cart) {
+      const localCart = useStore.getState().cart;
+      if (localCart.length > 0) {
+        const mergedCart = [...(data.cart || [])];
+        for (const item of localCart) {
+          const existing = mergedCart.find((x: any) => x.product === item.product);
+          if (existing) {
+            existing.qty = Math.max(existing.qty, item.qty);
+          } else {
+            mergedCart.push(item);
+          }
+        }
+        useStore.getState().setCart(mergedCart);
+        api.put('/users/cart', { cart: mergedCart }).catch(console.error);
+      } else if (data.cart) {
         useStore.getState().setCart(data.cart);
       }
       toast.success(`Welcome back, ${data.name}!`);

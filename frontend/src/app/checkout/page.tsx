@@ -238,11 +238,11 @@ export default function Checkout() {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-4 transition-all duration-300 ${
               index <= currentStep 
                 ? 'bg-green-500 border-green-100 dark:border-green-900/30 text-white shadow-lg' 
-                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
             }`}>
               {index < currentStep ? <Check size={18} strokeWidth={3} /> : index + 1}
             </div>
-            <span className={`mt-2 text-sm font-bold ${index <= currentStep ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{step}</span>
+            <span className={`mt-2 text-sm font-bold ${index <= currentStep ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{step}</span>
           </div>
         ))}
       </div>
@@ -269,12 +269,12 @@ export default function Checkout() {
                     <div className="flex gap-4 mb-6">
                       <label className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition ${deliveryType === 'Delivery' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-800'}`}>
                         <input type="radio" name="deliveryType" value="Delivery" checked={deliveryType === 'Delivery'} onChange={() => setDeliveryType('Delivery')} className="hidden" />
-                        <Truck size={24} className={deliveryType === 'Delivery' ? 'text-green-600' : 'text-gray-400'} />
+                        <Truck size={24} className={deliveryType === 'Delivery' ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'} />
                         <span className="font-bold text-gray-900 dark:text-white">Delivery</span>
                       </label>
                       <label className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition ${deliveryType === 'Pickup' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-800'}`}>
                         <input type="radio" name="deliveryType" value="Pickup" checked={deliveryType === 'Pickup'} onChange={() => setDeliveryType('Pickup')} className="hidden" />
-                        <ShoppingBag size={24} className={deliveryType === 'Pickup' ? 'text-green-600' : 'text-gray-400'} />
+                        <ShoppingBag size={24} className={deliveryType === 'Pickup' ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'} />
                         <span className="font-bold text-gray-900 dark:text-white">Store Pickup</span>
                       </label>
                     </div>

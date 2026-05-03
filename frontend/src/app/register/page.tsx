@@ -55,6 +55,10 @@ export default function Register() {
     try {
       const { data } = await api.post('/users', { name, email, password, role, storeName: role === 'seller' ? storeName : undefined });
       setUserInfo(data);
+      const localCart = useStore.getState().cart;
+      if (localCart.length > 0) {
+        api.put('/users/cart', { cart: localCart }).catch(console.error);
+      }
       toast.success(`Welcome to FreshMarket, ${data.name}!`);
       if (data.role === 'admin') router.push('/admin');
       else if (data.role === 'seller') router.push('/seller');
