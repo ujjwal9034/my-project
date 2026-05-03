@@ -40,7 +40,7 @@ const cloudinaryStorage = useCloudinary ? new CloudinaryStorage({
   params: {
     folder: 'freshmarket',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    public_id: (req, file) => `${Date.now()}-${crypto.randomUUID()}`,
+    public_id: (req: any, file: any) => `${Date.now()}-${crypto.randomUUID()}`,
   } as any,
 }) : null;
 
