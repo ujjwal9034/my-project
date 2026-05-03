@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api, { getImageUrl } from '@/utils/api';
 import { useStore } from '@/store/useStore';
-import { Star, ShoppingCart, Minus, Plus, ArrowLeft, Shield, Truck, Package, Heart, User, Clock, ImagePlus, X } from 'lucide-react';
+import { Star, ShoppingCart, Minus, Plus, ArrowLeft, Shield, Truck, Package, Heart, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import ReplaceCartModal from '@/components/ReplaceCartModal';
@@ -20,12 +20,13 @@ export default function ProductDetails() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
-  const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState('description');
   const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [hasOrdered, setHasOrdered] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchProduct();
+    checkPurchase();
   }, [params.id]);
 
   const fetchProduct = async () => {
@@ -38,6 +39,21 @@ export default function ProductDetails() {
       router.push('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkPurchase = async () => {
+    if (!userInfo) return;
+    try {
+      const { data } = await api.get('/orders/myorders');
+      const purchased = data.some((order: any) =>
+        order.status === 'Delivered' || order.status === 'Picked Up'
+          ? order.orderItems.some((item: any) => item.product === params.id || item.product?._id === params.id)
+          : false
+      );
+      setHasOrdered(purchased);
+    } catch {
+      setHasOrdered(false);
     }
   };
 
@@ -101,23 +117,25 @@ export default function ProductDetails() {
     }
     setReviewLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('rating', rating.toString());
-      formData.append('comment', comment);
-      reviewPhotos.forEach(photo => formData.append('photos', photo));
-
-      await api.post(`/products/${params.id}/reviews`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success('Review submitted successfully!');
+      await api.post(`/products/${params.id}/reviews`, { rating, comment });
+      toast.success('Review submitted!');
       setRating(0);
       setComment('');
-      setReviewPhotos([]);
       fetchProduct();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to submit review');
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    try {
+      await api.delete(`/products/${params.id}/reviews/${reviewId}`);
+      toast.success('Review deleted');
+      fetchProduct();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete review');
     }
   };
 
@@ -321,128 +339,138 @@ export default function ProductDetails() {
           </button>
         </div>
 
-        <div className="p-8">
-          {activeTab === 'description' ? (
-            <div className="prose prose-green dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed">
-              {product.description}
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {/* Write Review */}
-              {userInfo && (
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-2xl">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-4">Write a Review</h3>
-                  <form onSubmit={submitReview} className="space-y-4">
-                    <div>
-                      <div className="flex gap-2 mb-2">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            size={24}
-                            onClick={() => setRating(s)}
-                            className={`cursor-pointer transition-colors ${s <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-200'}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <textarea
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Share your thoughts about this product..."
-                      required
-                      rows={3}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none resize-none transition"
-                    />
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <label className="cursor-pointer flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
-                          <ImagePlus size={18} /> Add Photos (Max 3)
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            multiple 
-                            className="hidden" 
-                            onChange={(e) => {
-                              if (e.target.files) {
-                                const newFiles = Array.from(e.target.files);
-                                if (reviewPhotos.length + newFiles.length > 3) {
-                                  toast.error('Maximum 3 photos allowed');
-                                  return;
-                                }
-                                setReviewPhotos([...reviewPhotos, ...newFiles]);
-                              }
-                            }} 
-                          />
-                        </label>
-                      </div>
-                      {reviewPhotos.length > 0 && (
-                        <div className="flex gap-2 flex-wrap">
-                          {reviewPhotos.map((photo, index) => (
-                            <div key={index} className="relative group">
-                              <img src={URL.createObjectURL(photo)} alt="preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
-                              <button 
-                                type="button"
-                                onClick={() => setReviewPhotos(reviewPhotos.filter((_, i) => i !== index))}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
+            <div className="p-8">
+              {activeTab === 'description' ? (
+                <div className="prose prose-green dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {product.description}
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Rating Summary */}
+                  {product.numReviews > 0 && (
+                    <div className="flex items-center gap-6 p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700">
+                      <div className="text-center">
+                        <p className="text-5xl font-extrabold text-gray-900 dark:text-white">{product.rating.toFixed(1)}</p>
+                        <div className="flex justify-center gap-0.5 mt-1">
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} size={16} className={s <= Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'} />
                           ))}
                         </div>
-                      )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.numReviews} reviews</p>
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        {[5,4,3,2,1].map(star => {
+                          const count = product.reviews.filter((r: any) => Math.round(r.rating) === star).length;
+                          const pct = product.numReviews > 0 ? (count / product.numReviews) * 100 : 0;
+                          return (
+                            <div key={star} className="flex items-center gap-2 text-xs">
+                              <span className="w-3 text-gray-700 dark:text-gray-300 font-bold">{star}</span>
+                              <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                              <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                <div className="h-full bg-yellow-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="w-4 text-gray-500 dark:text-gray-400">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={reviewLoading}
-                      className="bg-green-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-green-700 transition disabled:opacity-50"
-                    >
-                      {reviewLoading ? 'Submitting...' : 'Submit Review'}
-                    </button>
-                  </form>
-                </div>
-              )}
+                  )}
 
-              {/* Review List */}
-              <div className="space-y-6">
-                {product.reviews.length === 0 ? (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-8">No reviews yet. Be the first to review!</p>
-                ) : (
-                  product.reviews.map((r: any) => (
-                    <div key={r._id} className="border-b border-gray-100 dark:border-gray-700 last:border-0 pb-6 last:pb-0">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {r.user?.name?.[0] || 'U'}
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-900 dark:text-white">{r.user?.name || 'User'}</p>
-                            <div className="flex text-yellow-400 text-xs">
+                  {/* Write Review */}
+                  {userInfo ? (
+                    hasOrdered === true ? (
+                      product.reviews.find((r: any) => r.user?._id === userInfo._id || r.user === userInfo._id) ? (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-4 text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-2">
+                          <Star size={16} className="fill-green-500 text-green-500" /> You have already reviewed this product.
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+                          <h3 className="font-bold text-gray-900 dark:text-white mb-1">Write a Review</h3>
+                          <p className="text-xs text-green-600 dark:text-green-400 font-semibold mb-4 flex items-center gap-1">✓ Verified Purchase</p>
+                          <form onSubmit={submitReview} className="space-y-4">
+                            <div className="flex gap-2">
                               {[1, 2, 3, 4, 5].map((s) => (
-                                <Star key={s} size={12} className={s <= r.rating ? 'fill-yellow-400' : 'text-gray-300 dark:text-gray-600'} />
+                                <Star
+                                  key={s}
+                                  size={28}
+                                  onClick={() => setRating(s)}
+                                  className={`cursor-pointer transition-all ${s <= rating ? 'text-yellow-400 fill-yellow-400 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-300'}`}
+                                />
                               ))}
                             </div>
-                          </div>
+                            <textarea
+                              value={comment}
+                              onChange={(e) => setComment(e.target.value)}
+                              placeholder="Share your experience with this product..."
+                              required
+                              rows={3}
+                              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none resize-none transition text-gray-900"
+                            />
+                            <button
+                              type="submit"
+                              disabled={reviewLoading}
+                              className="bg-green-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-green-700 transition disabled:opacity-50"
+                            >
+                              {reviewLoading ? 'Submitting...' : 'Submit Review'}
+                            </button>
+                          </form>
                         </div>
-                        <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                          <Clock size={12} /> {new Date(r.createdAt).toLocaleDateString()}
-                        </span>
+                      )
+                    ) : hasOrdered === false ? (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-sm text-amber-700 dark:text-amber-400 font-medium">
+                        🛒 You can only review products you have purchased and received.
                       </div>
-                      <p className="text-gray-600 dark:text-gray-300 ml-13 pl-13 mt-2">{r.comment}</p>
-                      {r.photos && r.photos.length > 0 && (
-                        <div className="flex gap-2 ml-13 pl-13 mt-3 flex-wrap">
-                          {r.photos.map((photo: string, index: number) => (
-                            <img key={index} src={getImageUrl(photo)} alt="Review photo" className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition" />
-                          ))}
-                        </div>
-                      )}
+                    ) : null
+                  ) : (
+                    <div className="bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-600 dark:text-gray-400 text-center">
+                      <Link href="/login" className="text-green-600 dark:text-green-400 font-bold hover:underline">Login</Link> to write a review.
                     </div>
-                  ))
-                )}
-              </div>
+                  )}
+
+                  {/* Review List */}
+                  <div className="space-y-5">
+                    {product.reviews.length === 0 ? (
+                      <p className="text-center text-gray-500 dark:text-gray-400 py-12">No reviews yet. Be the first to review!</p>
+                    ) : (
+                      product.reviews.map((r: any) => (
+                        <div key={r._id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                {r.user?.name?.[0]?.toUpperCase() || 'U'}
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-900 dark:text-white">{r.user?.name || 'User'}</p>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                      <Star key={s} size={13} className={s <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'} />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                    <Clock size={10} /> {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            {userInfo && (r.user?._id === userInfo._id || r.user === userInfo._id || userInfo.role === 'admin') && (
+                              <button
+                                onClick={() => deleteReview(r._id)}
+                                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded-lg transition font-semibold"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed pl-13">{r.comment}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
       </div>
       <ReplaceCartModal
         isOpen={showReplaceModal}
