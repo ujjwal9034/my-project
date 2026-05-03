@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Product from '../models/Product';
 import asyncHandler from '../utils/asyncHandler';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import fs from 'fs';
 
 // @desc    Fetch all products with pagination, keyword search, sorting, category filter
 // @route   GET /api/products
@@ -165,13 +166,22 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
   }
   
   // Handle image upload (local or cloudinary)
-  let imageUrl = '/images/sample.jpg';
+  let imageUrl = req.body.image || '/placeholder.png';
   if (req.file) {
-    // If using Cloudinary, req.file.path is the full URL
-    // If using diskStorage, req.file.filename is the local name
-    imageUrl = (req.file as any).path || `/uploads/${req.file.filename}`;
-  } else if (req.body.image) {
-    imageUrl = req.body.image;
+    // If using Cloudinary, req.file.path is the full HTTP URL
+    if ((req.file as any).path && (req.file as any).path.startsWith('http')) {
+      imageUrl = (req.file as any).path;
+    } else if (req.file.path) {
+      // Fallback: Local disk storage. Read to Base64 and store in DB for persistence on ephemeral servers (like Render)
+      try {
+        const base64Data = fs.readFileSync(req.file.path, 'base64');
+        imageUrl = `data:${req.file.mimetype};base64,${base64Data}`;
+        fs.unlinkSync(req.file.path); // Clean up the local file since we stored it in DB
+      } catch (err) {
+        console.error('Base64 conversion failed:', err);
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+    }
   }
 
   const product = new Product({
@@ -217,7 +227,19 @@ export const updateProduct = asyncHandler(async (req: AuthRequest, res: Response
 
     // Handle image update
     if (req.file) {
-      product.imageUrl = (req.file as any).path || `/uploads/${req.file.filename}`;
+      if ((req.file as any).path && (req.file as any).path.startsWith('http')) {
+        product.imageUrl = (req.file as any).path;
+      } else if (req.file.path) {
+        // Fallback: Store as Base64 for persistence
+        try {
+          const base64Data = fs.readFileSync(req.file.path, 'base64');
+          product.imageUrl = `data:${req.file.mimetype};base64,${base64Data}`;
+          fs.unlinkSync(req.file.path);
+        } catch (err) {
+          console.error('Base64 conversion failed:', err);
+          product.imageUrl = `/uploads/${req.file.filename}`;
+        }
+      }
     } else if (req.body.image) {
       product.imageUrl = req.body.image;
     }

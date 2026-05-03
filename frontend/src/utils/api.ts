@@ -10,6 +10,7 @@ export function getImageUrl(imageUrl: string): string {
   if (!imageUrl) return '/placeholder.png';
   if (imageUrl.startsWith('http')) return imageUrl;
   if (imageUrl.startsWith('/uploads')) return imageUrl; // proxied through Next.js rewrites
+  if (imageUrl.startsWith('data:image')) return imageUrl; // support Base64 fallback
   return '/placeholder.png';
 }
 
