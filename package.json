@@ -4,7 +4,13 @@
   "description": "My dynamic website",
   "main": "server.js",
   "scripts": {
-    "start": "node dist/index.js"
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build-all": "cd backend && npm run build && cd ../frontend && npm run build",
+    "dev": "npx concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "start": "cd backend && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   },
   "dependencies": {
     "autoprefixer": "^10.4.27",

@@ -35,3 +35,5 @@ services:
           type: web
           name: freshmarket-api
           property: host
+    # This ensures the backend starts first
+    autoDeploy: true
