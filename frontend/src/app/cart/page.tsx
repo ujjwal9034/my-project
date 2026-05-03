@@ -79,7 +79,7 @@ export default function Cart() {
       {cart.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="bg-white dark:bg-gray-800 p-12 text-center rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <CartIcon size={64} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+          <CartIcon size={64} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
           <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">Your cart is empty</h2>
           <p className="text-gray-500 dark:text-gray-400 mb-6">Looks like you haven&apos;t added any items to the cart yet.</p>
           <Link href="/" className="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition shadow-lg shadow-green-200 dark:shadow-green-900/30">
@@ -121,7 +121,7 @@ export default function Cart() {
                             <h3 className="text-base font-bold text-gray-800 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition truncate">{item.name}</h3>
                           </Link>
                           <p className="text-green-600 dark:text-green-400 font-extrabold mt-1">₹{item.price.toFixed(2)}</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Subtotal: ₹{(item.price * item.qty).toFixed(2)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Subtotal: ₹{(item.price * item.qty).toFixed(2)}</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
@@ -176,7 +176,7 @@ export default function Cart() {
               <Link href="/checkout" className="block w-full bg-gradient-to-r from-green-600 to-green-500 text-white text-center font-bold py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition transform hover:-translate-y-0.5">
                 Proceed to Checkout
               </Link>
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mt-4">
+              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-4">
                 <Shield size={14} />
                 <span>Secure checkout • 100% safe</span>
               </div>
