@@ -42,6 +42,23 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* ===== GLOBAL THEME SAFETY NET =====
+   Ensure text always visible regardless of theme or missed dark: prefixes */
+:root body {
+  color: #212121;
+}
+.dark body {
+  color: #f8fafc;
+}
+
+/* Inputs always legible */
+input, textarea, select {
+  color: #212121;
+}
+.dark input, .dark textarea, .dark select {
+  color: #f8fafc;
+}
+
 /* Tailwind native dark mode is used. Removed destructive !important overrides that were breaking backdrop-blurs and specific dark: variants */
 
 /* Custom scrollbar */

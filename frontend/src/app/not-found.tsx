@@ -12,7 +12,7 @@ export default function NotFound() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <div className="text-[120px] font-extrabold text-gray-100 dark:text-gray-800 leading-none select-none">404</div>
+        <div className="text-[120px] font-extrabold text-gray-200 dark:text-gray-700 leading-none select-none">404</div>
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white -mt-4 mb-3">Page Not Found</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
           Sorry, the page you&apos;re looking for doesn&apos;t exist or has been moved.

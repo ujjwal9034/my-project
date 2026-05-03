@@ -258,7 +258,7 @@ export default function ProductDetails() {
                     >
                       <Minus size={18} />
                     </button>
-                    <span className="px-6 font-bold text-lg dark:text-white">{cartItem.qty}</span>
+                    <span className="px-6 font-bold text-lg text-gray-900 dark:text-white">{cartItem.qty}</span>
                     <button 
                       onClick={() => {
                         if (cartItem.qty < product.stock) {
@@ -285,7 +285,7 @@ export default function ProductDetails() {
                     <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-l-xl">
                       <Minus size={18} />
                     </button>
-                    <span className="px-6 font-bold text-lg dark:text-white">{qty}</span>
+                    <span className="px-6 font-bold text-lg text-gray-900 dark:text-white">{qty}</span>
                     <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition rounded-r-xl">
                       <Plus size={18} />
                     </button>

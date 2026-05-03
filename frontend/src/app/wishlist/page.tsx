@@ -70,7 +70,7 @@ export default function WishlistPage() {
         </div>
       ) : (
         <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
-          <Heart size={56} className="mx-auto text-gray-200 dark:text-gray-600 mb-4" />
+          <Heart size={56} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-500 dark:text-gray-400 mb-2">Your wishlist is empty</h3>
           <p className="text-gray-400 dark:text-gray-500 mb-6">Browse products and tap the ❤️ to save items you love.</p>
           <Link href="/" className="inline-block bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition">

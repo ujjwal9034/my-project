@@ -223,7 +223,7 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Total Paid</span>
-                  <span className="font-bold dark:text-white">{stats.paidOrders} / {stats.totalOrders}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{stats.paidOrders} / {stats.totalOrders}</span>
                 </div>
                 <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                   <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${(stats.paidOrders/stats.totalOrders)*100 || 0}%` }}></div>
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
 
                 <div className="flex justify-between items-center text-sm mt-4">
                   <span className="text-gray-500 dark:text-gray-400">Delivered</span>
-                  <span className="font-bold dark:text-white">{stats.deliveredOrders} / {stats.totalOrders}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{stats.deliveredOrders} / {stats.totalOrders}</span>
                 </div>
                 <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                   <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(stats.deliveredOrders/stats.totalOrders)*100 || 0}%` }}></div>
@@ -567,7 +567,7 @@ export default function AdminDashboard() {
                       placeholder="Admin Notes..."
                       value={adminNotesInput[report._id] || ''}
                       onChange={(e) => setAdminNotesInput({...adminNotesInput, [report._id]: e.target.value})}
-                      className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-transparent dark:text-white"
+                      className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                     <div className="flex flex-wrap gap-2">
                       <button onClick={() => setActionModal({ isOpen: true, userId: report.seller?._id, action: 'warning', userName: report.seller?.name })} className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-bold hover:bg-yellow-200 transition">Issue Warning</button>
@@ -605,7 +605,7 @@ export default function AdminDashboard() {
                 {orders.map((o) => (
                   <tr key={o._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                     <td className="px-6 py-4 font-mono text-xs">{o._id.slice(-8)}</td>
-                    <td className="px-6 py-4 font-medium dark:text-white">{o.user?.name || 'Deleted User'}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{o.user?.name || 'Deleted User'}</td>
                     <td className="px-6 py-4 text-xs">{new Date(o.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 font-bold text-green-600 dark:text-green-400">₹{o.totalPrice.toFixed(2)}</td>
                     <td className="px-6 py-4">
