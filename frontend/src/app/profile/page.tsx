@@ -275,15 +275,15 @@ export default function Profile() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
-                          <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                          <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                         </div>
                         <div className="md:col-span-2">
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                          <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 234 567 890" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                          <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 234 567 890" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                         </div>
                       </div>
                       <button disabled={loading} type="submit" className="bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition disabled:opacity-50">
@@ -308,14 +308,14 @@ export default function Profile() {
                     {showAddressForm && (
                       <form onSubmit={saveAddress} className="mb-6 p-5 bg-gray-50 dark:bg-gray-700/50 rounded-2xl border border-gray-100 dark:border-gray-600">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <input type="text" placeholder="Address Label (e.g. Home, Work)" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="text" placeholder="Full Name" value={newAddress.fullName} onChange={e => setNewAddress({...newAddress, fullName: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="tel" placeholder="Phone Number (10 digits)" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="text" placeholder="House / Flat No." value={newAddress.houseNo} onChange={e => setNewAddress({...newAddress, houseNo: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="text" placeholder="Area / Street" value={newAddress.area} onChange={e => setNewAddress({...newAddress, area: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="text" placeholder="Landmark (Optional)" value={newAddress.landmark} onChange={e => setNewAddress({...newAddress, landmark: e.target.value})} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="text" placeholder="City" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
-                          <input type="text" placeholder="Pincode (6 digits)" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="Address Label (e.g. Home, Work)" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="Full Name" value={newAddress.fullName} onChange={e => setNewAddress({...newAddress, fullName: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="tel" placeholder="Phone Number (10 digits)" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="House / Flat No." value={newAddress.houseNo} onChange={e => setNewAddress({...newAddress, houseNo: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="Area / Street" value={newAddress.area} onChange={e => setNewAddress({...newAddress, area: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="Landmark (Optional)" value={newAddress.landmark} onChange={e => setNewAddress({...newAddress, landmark: e.target.value})} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="City" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
+                          <input type="text" placeholder="Pincode (6 digits)" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} required className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500" />
                         </div>
                         <div className="flex gap-2">
                           <button type="submit" className="bg-green-600 text-white font-bold py-2 px-6 rounded-xl hover:bg-green-700 text-sm">Save</button>
@@ -613,11 +613,11 @@ export default function Profile() {
                     <form onSubmit={changePassword} className="space-y-4 max-w-md">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
-                        <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                        <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">New Password</label>
-                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                       </div>
                       <button disabled={loading} type="submit" className="bg-gray-900 dark:bg-gray-700 text-white font-bold py-3 px-8 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-600 transition disabled:opacity-50">
                         {loading ? 'Updating...' : 'Update Password'}
@@ -647,7 +647,7 @@ export default function Profile() {
                             placeholder="Enter your password to confirm" 
                             value={deletePassword}
                             onChange={(e) => setDeletePassword(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900/50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-red-500 mb-4 outline-none transition"
+                            className="w-full px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900/50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 mb-4 outline-none transition"
                           />
                           <div className="flex gap-3">
                             <button onClick={deleteAccount} disabled={loading || !deletePassword} className="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl hover:bg-red-700 transition disabled:opacity-50">

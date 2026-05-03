@@ -112,7 +112,7 @@ export default function Cart() {
                   <div className="flex justify-between items-center mb-3 px-1">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <h3 className="font-bold text-gray-800 dark:text-gray-200">{group.sellerName}</h3>
+                      <h3 className="font-bold text-gray-800 text-gray-700 dark:text-gray-200">{group.sellerName}</h3>
                     </div>
                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full flex items-center gap-1">
                       <Tag size={11} /> Delivery ₹{group.deliveryCharge}

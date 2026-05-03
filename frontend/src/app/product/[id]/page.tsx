@@ -405,7 +405,7 @@ export default function ProductDetails() {
                               placeholder="Share your experience with this product..."
                               required
                               rows={3}
-                              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none resize-none transition text-gray-900"
+                              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none resize-none transition text-gray-900"
                             />
                             <button
                               type="submit"

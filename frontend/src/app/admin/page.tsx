@@ -366,7 +366,7 @@ export default function AdminDashboard() {
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
               placeholder="Search users by name or email..."
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm"
             />
           </div>
 
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
                   }`}>
                     {u.account_status || (u.isBanned ? 'banned' : 'active')}
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400">Warnings: <strong className="dark:text-white">{u.warningCount || 0}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Warnings: <strong className="text-gray-900 dark:text-white">{u.warningCount || 0}</strong></span>
                 </div>
                 {u.banReason && <p className="text-xs text-red-500">Reason: {u.banReason}</p>}
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl mb-4 text-sm text-gray-800 dark:text-gray-200">
+                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl mb-4 text-sm text-gray-800 text-gray-700 dark:text-gray-200">
                   "{report.message}"
                 </div>
 

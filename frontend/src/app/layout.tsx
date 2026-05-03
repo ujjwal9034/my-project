@@ -51,7 +51,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} min-h-screen flex flex-col transition-colors duration-300`}>
+      <body className={`${inter.className} min-h-screen flex flex-col transition-colors duration-300 text-gray-900 dark:text-gray-100`}>
         <BackendWakeup />
         <ToastProvider />
         <Suspense fallback={<div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800"></div>}>

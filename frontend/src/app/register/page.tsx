@@ -104,7 +104,7 @@ export default function Register() {
             <div className="relative">
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
                 placeholder="John Doe"
-                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
               <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function Register() {
               <div className="relative mb-2">
                 <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} required={role === 'seller'}
                   placeholder="Your Shop Name"
-                  className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                  className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
                 <Store size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
             </motion.div>
@@ -179,7 +179,7 @@ export default function Register() {
             <div className="relative">
               <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required
                 placeholder="Create a strong password"
-                className="w-full px-4 py-3 pl-11 pr-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                className="w-full px-4 py-3 pl-11 pr-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
               <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
@@ -228,7 +228,7 @@ export default function Register() {
             <div className="relative">
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
                 placeholder="Re-enter your password"
-                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
+                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" />
               <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
             {confirmPassword && password !== confirmPassword && (

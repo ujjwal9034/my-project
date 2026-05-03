@@ -591,11 +591,11 @@ export default function SellerDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Product Name</label>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" placeholder="e.g., Fresh Organic Tomatoes" />
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" placeholder="e.g., Fresh Organic Tomatoes" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                        <select value={category} onChange={(e) => setCategory(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+                        <select value={category} onChange={(e) => setCategory(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition">
                           <option value="">Select Category</option>
                           <option value="Fruits">Fruits</option>
                           <option value="Vegetables">Vegetables</option>
@@ -609,15 +609,15 @@ export default function SellerDashboard() {
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Price (₹)</label>
-                        <input type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" placeholder="0.00" />
+                        <input type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" placeholder="0.00" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Stock Quantity</label>
-                        <input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" placeholder="0" />
+                        <input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition" placeholder="0" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Unit</label>
-                        <select value={unit} onChange={(e) => setUnit(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+                        <select value={unit} onChange={(e) => setUnit(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition">
                           <option value="kg">kg</option>
                           <option value="gram">gram</option>
                           <option value="litre">litre</option>
@@ -629,7 +629,7 @@ export default function SellerDashboard() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none" placeholder="Describe your product..." />
+                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none" placeholder="Describe your product..." />
                     </div>
                     <div className="flex gap-3">
                       <button disabled={productLoading} type="submit" className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-3 px-8 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition disabled:opacity-50 flex items-center justify-center gap-2">
@@ -654,7 +654,7 @@ export default function SellerDashboard() {
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
                 placeholder="Search your products..."
-                className="w-full sm:w-80 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                className="w-full sm:w-80 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               />
             </div>
           )}
@@ -735,15 +735,15 @@ export default function SellerDashboard() {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center"><ShoppingBag size={20} className="text-blue-500" /></div>
-                <div><p className="text-xs text-gray-500 uppercase font-bold">Total Orders</p><p className="text-xl font-extrabold dark:text-white">{visibleOrders.length}</p></div>
+                <div><p className="text-xs text-gray-500 uppercase font-bold">Total Orders</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{visibleOrders.length}</p></div>
               </div>
               <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
                 <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl flex items-center justify-center"><Bell size={20} className="text-yellow-500" /></div>
-                <div><p className="text-xs text-gray-500 uppercase font-bold">Pending</p><p className="text-xl font-extrabold dark:text-white">{pendingCount}</p></div>
+                <div><p className="text-xs text-gray-500 uppercase font-bold">Pending</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{pendingCount}</p></div>
               </div>
               <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center"><Package size={20} className="text-green-500" /></div>
-                <div><p className="text-xs text-gray-500 uppercase font-bold">Delivered</p><p className="text-xl font-extrabold dark:text-white">{deliveredCount}</p></div>
+                <div><p className="text-xs text-gray-500 uppercase font-bold">Delivered</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{deliveredCount}</p></div>
               </div>
             </div>
 
@@ -777,7 +777,7 @@ export default function SellerDashboard() {
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 pb-4 border-b border-gray-50 dark:border-gray-700">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-bold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md dark:text-gray-200">
+                          <span className="text-sm font-bold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md text-gray-700 dark:text-gray-200">
                             Order #{orderNum}
                           </span>
                           <span className="text-xs text-gray-400 font-mono">({order._id.slice(-8)})</span>
@@ -887,7 +887,7 @@ export default function SellerDashboard() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Edit Store Name</label>
-                <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" placeholder="e.g. FreshFarm Organics" />
+                <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" placeholder="e.g. FreshFarm Organics" />
               </div>
 
               {/* KYC Section */}
@@ -963,11 +963,11 @@ export default function SellerDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Delivery Charge (₹)</label>
-                    <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} placeholder="0.00" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                    <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} placeholder="0.00" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Free Delivery Above (₹)</label>
-                    <input type="number" value={freeDeliveryAbove} onChange={(e) => setFreeDeliveryAbove(e.target.value)} placeholder="e.g. 500" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                    <input type="number" value={freeDeliveryAbove} onChange={(e) => setFreeDeliveryAbove(e.target.value)} placeholder="e.g. 500" className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                   </div>
                 </div>
               )}
@@ -996,7 +996,7 @@ export default function SellerDashboard() {
                       value={newSlotInput} 
                       onChange={(e) => setNewSlotInput(e.target.value)} 
                       placeholder="e.g. 05:00 PM - 07:00 PM" 
-                      className="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" 
+                      className="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" 
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -1025,7 +1025,7 @@ export default function SellerDashboard() {
                     <div className="flex flex-wrap gap-2">
                       {pickupSlots.map((slot, idx) => (
                         <div key={idx} className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 px-3 py-1.5 rounded-lg text-sm">
-                          <span className="dark:text-gray-200">{slot}</span>
+                          <span className="text-gray-700 dark:text-gray-200">{slot}</span>
                           <button 
                             type="button" 
                             onClick={() => setPickupSlots(pickupSlots.filter((_, i) => i !== idx))}
@@ -1109,7 +1109,7 @@ export default function SellerDashboard() {
                         {new Date(r.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed mb-3">
+                    <p className="text-sm text-gray-800 text-gray-700 dark:text-gray-200 leading-relaxed mb-3">
                       "{r.message}"
                     </p>
                     <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-600 pt-3">

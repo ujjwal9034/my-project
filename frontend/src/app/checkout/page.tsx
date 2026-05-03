@@ -294,7 +294,7 @@ export default function Checkout() {
                               }`}
                             >
                               <span className="text-xs font-bold bg-white dark:bg-gray-800 px-2 py-1 rounded-md text-gray-800 dark:text-gray-300 shadow-sm border border-gray-100 dark:border-gray-700">{addr.label}</span>
-                              <p className="text-sm font-medium mt-2 dark:text-gray-200">{addr.address}</p>
+                              <p className="text-sm font-medium mt-2 text-gray-700 dark:text-gray-200">{addr.address}</p>
                               <p className="text-xs text-gray-700 dark:text-gray-400">{addr.city}, {addr.postalCode}</p>
                             </div>
                           ))}
@@ -310,16 +310,16 @@ export default function Checkout() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-300 mb-1">Full Address</label>
-                        <input type="text" value={shippingAddress.address} onChange={e => setShippingAddress({...shippingAddress, address: e.target.value})} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                        <input type="text" value={shippingAddress.address} onChange={e => setShippingAddress({...shippingAddress, address: e.target.value})} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-semibold text-gray-900 dark:text-gray-300 mb-1">City</label>
-                          <input type="text" value={shippingAddress.city} onChange={e => setShippingAddress({...shippingAddress, city: e.target.value})} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                          <input type="text" value={shippingAddress.city} onChange={e => setShippingAddress({...shippingAddress, city: e.target.value})} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-900 dark:text-gray-300 mb-1">Postal Code</label>
-                          <input type="text" value={shippingAddress.postalCode} onChange={e => setShippingAddress({...shippingAddress, postalCode: e.target.value})} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                          <input type="text" value={shippingAddress.postalCode} onChange={e => setShippingAddress({...shippingAddress, postalCode: e.target.value})} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                         </div>
                         </div>
                       </div>
@@ -334,14 +334,14 @@ export default function Checkout() {
                         <div>
                           <label className="block text-sm font-semibold text-gray-900 dark:text-gray-300 mb-2">Preferred Pickup Time</label>
                           {availablePickupSlots.length > 0 ? (
-                            <select value={pickupSlotTime} onChange={e => setPickupSlotTime(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition">
+                            <select value={pickupSlotTime} onChange={e => setPickupSlotTime(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition">
                               <option value="">Select a time slot</option>
                               {availablePickupSlots.map(slot => (
                                 <option key={slot} value={slot}>{slot}</option>
                               ))}
                             </select>
                           ) : (
-                            <input type="time" value={pickupSlotTime} onChange={e => setPickupSlotTime(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
+                            <input type="time" value={pickupSlotTime} onChange={e => setPickupSlotTime(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                           )}
                           <p className="text-xs text-gray-700 mt-2">These times are provided by the store.</p>
                         </div>
@@ -373,16 +373,16 @@ export default function Checkout() {
                           <div className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 space-y-4">
                             <div>
                               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wider mb-1">Card Number</label>
-                              <input type="text" placeholder="0000 0000 0000 0000" maxLength={19} value={cardDetails.number} onChange={e => setCardDetails({...cardDetails, number: e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim()})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
+                              <input type="text" placeholder="0000 0000 0000 0000" maxLength={19} value={cardDetails.number} onChange={e => setCardDetails({...cardDetails, number: e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim()})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wider mb-1">Expiry Date</label>
-                                <input type="text" placeholder="MM/YY" maxLength={5} value={cardDetails.expiry} onChange={e => setCardDetails({...cardDetails, expiry: e.target.value})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
+                                <input type="text" placeholder="MM/YY" maxLength={5} value={cardDetails.expiry} onChange={e => setCardDetails({...cardDetails, expiry: e.target.value})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
                               </div>
                               <div>
                                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wider mb-1">CVV</label>
-                                <input type="password" placeholder="•••" maxLength={4} value={cardDetails.cvv} onChange={e => setCardDetails({...cardDetails, cvv: e.target.value})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
+                                <input type="password" placeholder="•••" maxLength={4} value={cardDetails.cvv} onChange={e => setCardDetails({...cardDetails, cvv: e.target.value})} required className="w-full bg-white dark:bg-gray-800 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
                               </div>
                             </div>
                           </div>
@@ -391,7 +391,7 @@ export default function Checkout() {
                       
                       {paymentMethod === 'UPI' && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="pt-4 overflow-hidden">
-                          <input type="text" placeholder="name@upi" value={upiId} onChange={e => setUpiId(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                          <input type="text" placeholder="name@upi" value={upiId} onChange={e => setUpiId(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -365,7 +365,7 @@ export default function ReportsPage() {
                       value={form.orderId}
                       onChange={(e) => setForm({ ...form, orderId: e.target.value })}
                       required
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
                     >
                       <option value="">— Choose an order —</option>
                       {orders.map((o) => (
@@ -423,7 +423,7 @@ export default function ReportsPage() {
                         ? 'Describe the issue you faced with this order…'
                         : 'Share your experience with this store…'
                     }
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm resize-none"
                   />
                   <p className="text-xs text-gray-400 mt-1">{form.message.length} characters</p>
                 </div>
