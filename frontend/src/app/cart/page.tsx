@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
 import { getImageUrl } from '@/utils/api';
-import { Trash2, ShoppingCart as CartIcon, Minus, Plus, ArrowLeft, Shield } from 'lucide-react';
+import { Trash2, ShoppingCart as CartIcon, Minus, Plus, ArrowLeft, Shield, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import toast from 'react-hot-toast';
@@ -53,12 +53,16 @@ export default function Cart() {
 
   return (
     <div className="py-8 max-w-5xl mx-auto">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-800 dark:text-gray-400">
+          <Link
+            href="/"
+            className="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-300"
+          >
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="text-3xl font-extrabold text-black dark:text-white">Shopping Cart</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Shopping Cart</h1>
           {cart.length > 0 && (
             <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm font-bold">
               {totalItems} item{totalItems !== 1 ? 's' : ''}
@@ -67,35 +71,54 @@ export default function Cart() {
         </div>
 
         {cart.length > 0 && (
-          <button 
-            onClick={() => setShowClearCartModal(true)} 
-            className="flex items-center justify-center gap-2 text-sm font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-4 py-2 rounded-xl transition w-full sm:w-auto"
+          <button
+            onClick={() => setShowClearCartModal(true)}
+            className="flex items-center justify-center gap-2 text-sm font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 border border-red-100 dark:border-red-900/30 px-4 py-2 rounded-xl transition w-full sm:w-auto"
           >
             <Trash2 size={16} /> Empty Cart
           </button>
         )}
       </div>
 
+      {/* Empty State */}
       {cart.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="bg-white dark:bg-gray-800 p-12 text-center rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <CartIcon size={64} className="mx-auto text-gray-600 dark:text-gray-200 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-300 mb-2">Your cart is empty</h2>
-          <p className="text-gray-700 dark:text-gray-400 mb-6">Looks like you haven&apos;t added any items to the cart yet.</p>
-          <Link href="/" className="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition shadow-lg shadow-green-200 dark:shadow-green-900/30">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-gray-800 p-16 text-center rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700"
+        >
+          <div className="w-24 h-24 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-green-100 dark:border-green-800">
+            <CartIcon size={44} className="text-green-500" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Your cart is empty</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">
+            Looks like you haven&apos;t added any items yet. Start shopping to fill it up!
+          </p>
+          <Link
+            href="/"
+            className="inline-block bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-3 px-10 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition transform hover:-translate-y-0.5"
+          >
             Start Shopping
           </Link>
         </motion.div>
       ) : (
         <div className="flex flex-col lg:flex-row gap-8">
+          {/* Cart Items */}
           <div className="w-full lg:w-2/3 space-y-3">
             <AnimatePresence>
               {Object.entries(groupedCart).map(([sellerId, group]) => (
                 <div key={sellerId} className="mb-6">
-                  <div className="flex justify-between items-end mb-3 px-2">
-                    <h3 className="font-bold text-black dark:text-gray-200">{group.sellerName}</h3>
-                    <span className="text-xs text-gray-700 dark:text-gray-400">Delivery: ₹{group.deliveryCharge}</span>
+                  {/* Seller Header */}
+                  <div className="flex justify-between items-center mb-3 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <h3 className="font-bold text-gray-800 dark:text-gray-200">{group.sellerName}</h3>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <Tag size={11} /> Delivery ₹{group.deliveryCharge}
+                    </span>
                   </div>
+
                   <div className="space-y-3">
                     {group.items.map((item, index) => (
                       <motion.div
@@ -104,44 +127,58 @@ export default function Cart() {
                         exit={{ opacity: 0, x: 20, height: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.03 }}
                         key={item.product}
-                        className="flex items-center bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+                        className="flex items-center bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-green-200 dark:hover:border-green-800/50 transition-all"
                       >
-                        <div className="w-20 h-20 relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                        {/* Product Image */}
+                        <div className="w-20 h-20 relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 border border-gray-100 dark:border-gray-600">
                           <img
                             src={getImageUrl(item.image)}
                             alt={item.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://placehold.co/100x100/e2e8f0/64748b?text=${encodeURIComponent(item.name)}`;
+                              (e.target as HTMLImageElement).src = `https://placehold.co/100x100/f0fdf4/16a34a?text=${encodeURIComponent(item.name[0])}`;
                             }}
                           />
                         </div>
+
+                        {/* Product Info */}
                         <div className="flex-grow px-4 min-w-0">
                           <Link href={`/product/${item.product}`}>
-                            <h3 className="text-base font-bold text-black dark:text-white hover:text-green-600 dark:hover:text-green-400 transition truncate">{item.name}</h3>
+                            <h3 className="text-base font-bold text-gray-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition truncate">
+                              {item.name}
+                            </h3>
                           </Link>
-                          <p className="text-green-600 dark:text-green-400 font-extrabold mt-1">₹{item.price.toFixed(2)}</p>
-                          <p className="text-xs text-gray-700 dark:text-gray-400 mt-0.5">Subtotal: ₹{(item.price * item.qty).toFixed(2)}</p>
+                          <p className="text-green-600 dark:text-green-400 font-extrabold mt-1 text-lg">
+                            ₹{item.price.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Subtotal: <span className="font-semibold text-gray-700 dark:text-gray-300">₹{(item.price * item.qty).toFixed(2)}</span>
+                          </p>
                         </div>
+
+                        {/* Qty + Remove */}
                         <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+                          <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden shadow-sm">
                             <button
                               onClick={() => handleQtyChange(item, item.qty - 1)}
-                              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-300 transition"
+                              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 hover:text-red-500 transition"
                             >
                               <Minus size={14} />
                             </button>
-                            <span className="px-4 text-sm font-bold text-black dark:text-white min-w-[2rem] text-center bg-white dark:bg-gray-800">{item.qty}</span>
+                            <span className="px-4 text-sm font-bold text-gray-900 dark:text-white min-w-[2rem] text-center bg-white dark:bg-gray-800">
+                              {item.qty}
+                            </span>
                             <button
                               onClick={() => handleQtyChange(item, item.qty + 1)}
-                              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-300 transition"
+                              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 hover:text-green-600 transition"
                             >
                               <Plus size={14} />
                             </button>
                           </div>
                           <button
                             onClick={() => handleRemove(item)}
-                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                            title="Remove item"
                           >
                             <Trash2 size={18} />
                           </button>
@@ -154,36 +191,45 @@ export default function Cart() {
             </AnimatePresence>
           </div>
 
+          {/* Order Summary */}
           <div className="w-full lg:w-1/3">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 sticky top-24">
-              <h3 className="text-xl font-bold text-black dark:text-white mb-6">Order Summary</h3>
-              <div className="space-y-3 text-gray-800 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 pb-4 mb-4">
-                <div className="flex justify-between">
-                  <span>Subtotal ({totalItems} items)</span>
-                  <span className="font-semibold text-black dark:text-gray-200">₹{totalPrice.toFixed(2)}</span>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 sticky top-24">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Order Summary</h3>
+
+              <div className="space-y-3 border-b border-gray-100 dark:border-gray-700 pb-4 mb-4">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <span>Subtotal ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">₹{totalPrice.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                   <span>Shipping</span>
-                  <span className={`font-semibold ${shippingPrice === 0 ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-gray-200'}`}>
+                  <span className={`font-semibold ${shippingPrice === 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}>
                     {shippingPrice === 0 ? 'Free' : `₹${shippingPrice.toFixed(2)}`}
                   </span>
                 </div>
               </div>
-              <div className="flex justify-between text-lg font-extrabold text-black dark:text-white mb-6">
+
+              <div className="flex justify-between text-lg font-extrabold text-gray-900 dark:text-white mb-6">
                 <span>Total</span>
                 <span className="text-green-600 dark:text-green-400">₹{(totalPrice + shippingPrice).toFixed(2)}</span>
               </div>
-              <Link href="/checkout" className="block w-full bg-gradient-to-r from-green-600 to-green-500 text-white text-center font-bold py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition transform hover:-translate-y-0.5">
-                Proceed to Checkout
+
+              <Link
+                href="/checkout"
+                className="block w-full bg-gradient-to-r from-green-600 to-green-500 text-white text-center font-bold py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition transform hover:-translate-y-0.5"
+              >
+                Proceed to Checkout →
               </Link>
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-700 dark:text-gray-400 mt-4">
-                <Shield size={14} />
-                <span>Secure checkout • 100% safe</span>
+
+              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-4">
+                <Shield size={13} className="text-green-500" />
+                <span>Secure checkout · 100% safe</span>
               </div>
             </div>
           </div>
         </div>
       )}
+
       <ConfirmationModal
         isOpen={showClearCartModal}
         onClose={() => setShowClearCartModal(false)}
