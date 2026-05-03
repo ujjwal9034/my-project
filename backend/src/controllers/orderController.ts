@@ -48,7 +48,7 @@ export const addOrderItems = asyncHandler(async (req: AuthRequest, res: Response
       image: product.imageUrl || item.image,
       price: product.price,       // Use DB price, NEVER trust client
       product: product._id,
-      seller: product.seller,     // Use DB seller, NEVER trust client
+      seller: (product.seller as any)._id || product.seller,     // Use DB seller, extract _id if populated
     });
   }
 
