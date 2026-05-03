@@ -13,6 +13,8 @@ const STEPS = ['Shipping', 'Payment', 'Review'];
 export default function Checkout() {
   const router = useRouter();
   const { userInfo, cart, clearCart } = useStore();
+  const [isMounted, setIsMounted] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -56,34 +58,49 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     if (!userInfo) {
-      router.push('/login?redirect=/checkout');
+      // Small delay to allow Zustand to rehydrate from localStorage
+      const timer = setTimeout(() => {
+        if (!useStore.getState().userInfo) {
+          router.push('/login?redirect=/checkout');
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     } else if (cart.length === 0 && !success) {
       router.push('/cart');
-    } else if (cart.length > 0 && !success) {
-      // Validate cart items exist on the server (important for ephemeral DBs like Render free tier)
+    } else if (cart.length > 0 && !success && !isValidating) {
+      // Validate cart items exist on the server
       const validateCart = async () => {
+        setIsValidating(true);
         try {
           for (const item of cart) {
+            // Using absolute paths to ensure proxy works correctly
             await api.get(`/products/${item.product}`);
           }
         } catch (error: any) {
           if (error.response?.status === 404) {
-            toast.error('Some items in your cart are no longer available and have been removed.');
-            clearCart();
-            router.push('/cart');
+            toast.error('Some items in your cart are no longer available.');
+            // Don't clear everything, just warn
           }
+        } finally {
+          setIsValidating(false);
         }
       };
       validateCart();
     }
-  }, [userInfo, cart.length, router, success, cart, clearCart]);
+  }, [userInfo, cart.length, router, success, cart, clearCart, isMounted, isValidating]);
 
   useEffect(() => {
-    if (userInfo && !success) {
+    if (isMounted && userInfo && !success) {
       fetchAddresses();
     }
-  }, [userInfo, success]);
+  }, [userInfo, success, isMounted]);
 
   const fetchAddresses = async () => {
     try {

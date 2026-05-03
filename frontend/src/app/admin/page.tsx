@@ -29,16 +29,29 @@ export default function AdminDashboard() {
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!userInfo && !token) {
-      router.push('/login');
+      const timer = setTimeout(() => {
+        if (!useStore.getState().userInfo && !localStorage.getItem('token')) {
+          router.push('/login');
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     } else if (userInfo && userInfo.role !== 'admin') {
       router.push('/profile');
-    } else {
+    } else if (userInfo && userInfo.role === 'admin') {
       fetchData();
     }
-  }, [userInfo, router]);
+  }, [userInfo, router, isMounted]);
 
   const fetchData = async () => {
     setLoading(true);

@@ -16,7 +16,13 @@ const nextConfig = {
     unoptimized: true,
   },
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    let backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    
+    // Ensure the backend URL has a protocol (required for Render 'host' property)
+    if (backendUrl && !backendUrl.startsWith('http')) {
+      backendUrl = `https://${backendUrl}`;
+    }
+    
     return [
       {
         source: '/api/:path*',

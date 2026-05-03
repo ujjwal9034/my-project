@@ -58,9 +58,22 @@ export default function Profile() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     if (!userInfo) {
-      router.push('/login');
+      const timer = setTimeout(() => {
+        if (!useStore.getState().userInfo) {
+          router.push('/login');
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     } else {
       setName(userInfo.name || '');
       setEmail(userInfo.email || '');
@@ -68,7 +81,7 @@ export default function Profile() {
       setTwoFactorEnabled(userInfo.twoFactorEnabled || false);
       fetchProfileData();
     }
-  }, [userInfo, router]);
+  }, [userInfo, router, isMounted]);
 
   const fetchProfileData = async () => {
     try {

@@ -53,9 +53,22 @@ export default function SellerDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kycInputRef = useRef<HTMLInputElement>(null);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     if (!userInfo) {
-      router.push('/login');
+      const timer = setTimeout(() => {
+        if (!useStore.getState().userInfo) {
+          router.push('/login');
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     } else if (userInfo.role !== 'seller') {
       router.push('/profile');
     } else {
@@ -65,7 +78,7 @@ export default function SellerDashboard() {
       }, 30000); // Poll every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [userInfo, router]);
+  }, [userInfo, router, isMounted]);
 
   const fetchData = async () => {
     try {
