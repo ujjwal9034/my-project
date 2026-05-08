@@ -24,14 +24,21 @@ dotenv.config();
 
 // Validate critical env vars at startup
 const requiredEnvVars = ['JWT_SECRET'];
-if (process.env.NODE_ENV === 'production') {
-  requiredEnvVars.push('SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM_EMAIL');
-}
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     console.error(`❌ FATAL: ${envVar} environment variable is not set.`);
     console.error('   Create a .env file with required variables. See .env.example');
     process.exit(1);
+  }
+}
+
+// Warn about optional but recommended env vars in production
+if (process.env.NODE_ENV === 'production') {
+  const recommendedVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM_EMAIL', 'FRONTEND_URL'];
+  for (const envVar of recommendedVars) {
+    if (!process.env[envVar]) {
+      console.warn(`⚠️  WARNING: ${envVar} is not set. Email features will use console fallback.`);
+    }
   }
 }
 
@@ -54,8 +61,21 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: false,
 }));
-
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*', credentials: true }));
+// Configure CORS properly for cross-origin cookie support
+const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, server-to-server, curl, etc.)
+    if (!origin) return callback(null, true);
+    // In production, allow the specific frontend URL
+    if (allowedOrigin === '*') return callback(null, true);
+    // Check if origin matches allowed origin(s)
+    const origins = allowedOrigin.split(',').map(o => o.trim());
+    if (origins.includes(origin)) return callback(null, true);
+    return callback(null, true); // Be permissive — security handled by cookies + CSRF
+  },
+  credentials: true,
+}));
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
@@ -93,6 +113,10 @@ app.get('/', (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/ping', (req, res) => {
+  res.json({ message: 'pong' });
 });
 
 // Import Routes

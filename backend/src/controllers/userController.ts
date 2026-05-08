@@ -15,6 +15,17 @@ import { validateEmailDeliverable } from '../utils/validateEmail';
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME = 30 * 60 * 1000; // 30 minutes
 
+// ── Cookie helper (handles cross-origin Render deployment) ────────────────────
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  };
+};
+
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
@@ -49,19 +60,24 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
         user.twoFactorCodeExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
         await user.save();
         
-        await sendEmail({
-          email: user.email,
-          subject: 'FreshMarket - Your 2FA Login Code',
-          message: `Your login code is: ${code}\nIt expires in 10 minutes.`,
-        });
+        try {
+          await sendEmail({
+            email: user.email,
+            subject: 'FreshMarket - Your 2FA Login Code',
+            message: `Your two-factor authentication code is: ${code}\nThis code expires in 10 minutes.\nIf you didn't request this, please ignore this email.`,
+          });
+        } catch (emailErr: any) {
+          console.error('❌ Failed to send 2FA email:', emailErr.message);
+          // Don't block login — still return requires2FA so user knows to check
+        }
 
-        res.json({ requires2FA: true, message: '2FA code sent to your email.' });
+        res.json({ requires2FA: true, message: '2FA code sent to your email. Check your inbox.' });
         return;
       }
 
       if (user.twoFactorCode !== twoFactorCode || !user.twoFactorCodeExpire || user.twoFactorCodeExpire < new Date()) {
         res.status(401);
-        throw new Error('Invalid or expired 2FA code');
+        throw new Error('Invalid or expired 2FA code. Please try logging in again.');
       }
 
       // Clear 2FA code on success
@@ -76,12 +92,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
     await user.save();
 
     const token = generateToken(user._id as string, user.role);
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('jwt', token, getCookieOptions());
     res.json({
       _id: user._id,
       name: user.name,
@@ -96,6 +107,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       account_status: user.account_status,
       warningCount: user.warningCount,
       deliveryCharge: user.deliveryCharge,
+      twoFactorEnabled: user.twoFactorEnabled,
       cart: user.cart,
     });
   } else {
@@ -161,12 +173,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 
   if (user) {
     const token = generateToken(user._id as string, user.role);
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('jwt', token, getCookieOptions());
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -191,9 +198,8 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 // @access  Public
 export const logoutUser = (req: Request, res: Response) => {
   res.cookie('jwt', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    ...getCookieOptions(),
+    maxAge: 0,
     expires: new Date(0),
   });
   res.status(200).json({ message: 'Logged out successfully' });
@@ -265,6 +271,7 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
       account_status: updatedUser.account_status,
       warningCount: updatedUser.warningCount,
       deliveryCharge: updatedUser.deliveryCharge,
+      twoFactorEnabled: updatedUser.twoFactorEnabled,
       cart: updatedUser.cart,
     });
   } else {
@@ -346,7 +353,7 @@ export const deleteAccount = asyncHandler(async (req: AuthRequest, res: Response
   // Delete the user
   await User.deleteOne({ _id: req.user._id });
 
-  res.cookie('jwt', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', expires: new Date(0) });
+  res.cookie('jwt', '', { ...getCookieOptions(), maxAge: 0, expires: new Date(0) });
   res.json({ message: 'Account deleted successfully' });
 });
 

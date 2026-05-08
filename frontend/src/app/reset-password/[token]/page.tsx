@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/utils/api';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, CheckCircle, Check, X as XIcon } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle, Check, X as XIcon, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ResetPassword() {
@@ -62,16 +62,25 @@ export default function ResetPassword() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 text-center"
+          className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 text-center"
         >
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}>
-            <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
+            <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={40} className="text-green-500" />
+            </div>
           </motion.div>
           <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Password Reset!</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
             Your password has been reset successfully. Redirecting to sign in...
           </p>
-          <div className="w-16 h-1 bg-green-500 rounded-full mx-auto animate-pulse" />
+          <div className="w-full bg-gray-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: '0%' }}
+              animate={{ width: '100%' }}
+              transition={{ duration: 3, ease: 'linear' }}
+              className="h-full bg-green-500 rounded-full"
+            />
+          </div>
         </motion.div>
       </div>
     );
@@ -83,9 +92,11 @@ export default function ResetPassword() {
       animate={{ opacity: 1, y: 0 }}
       className="flex justify-center items-center py-16"
     >
-      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+      <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-3">🔑</div>
+          <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🔑</span>
+          </div>
           <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">Reset Password</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
             Enter your new password below.
@@ -94,7 +105,8 @@ export default function ResetPassword() {
 
         {error && (
           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-xl mb-4 text-sm text-center font-medium border border-red-100 dark:border-red-800">
+            className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-xl mb-4 text-sm text-center font-medium border border-red-100 dark:border-red-800 flex items-center justify-center gap-2">
+            <AlertCircle size={16} />
             {error}
           </motion.div>
         )}
@@ -105,11 +117,13 @@ export default function ResetPassword() {
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
+                id="reset-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 pl-11 pr-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                className="w-full px-4 py-3 pl-11 pr-11 rounded-xl border border-gray-200 dark:border-slate-700 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                 required
                 placeholder="Create a strong password"
+                autoFocus
               />
               <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <button
@@ -122,17 +136,17 @@ export default function ResetPassword() {
             </div>
 
             {password && (
-              <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 {[
                   { key: 'length', label: '8+ characters' },
                   { key: 'uppercase', label: 'Uppercase letter' },
                   { key: 'lowercase', label: 'Lowercase letter' },
                   { key: 'number', label: 'Number' },
                 ].map(({ key, label }) => (
-                  <span key={key} className={`flex items-center gap-1 ${
-                    (passwordChecks as any)[key] ? 'text-green-600' : 'text-gray-400'
+                  <span key={key} className={`flex items-center gap-1.5 text-xs font-medium ${
+                    (passwordChecks as any)[key] ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
                   }`}>
-                    {(passwordChecks as any)[key] ? <Check size={12} /> : <XIcon size={12} />}
+                    {(passwordChecks as any)[key] ? <Check size={14} className="text-green-500" /> : <XIcon size={14} />}
                     {label}
                   </span>
                 ))}
@@ -145,22 +159,27 @@ export default function ResetPassword() {
             <div className="relative">
               <input
                 type="password"
+                id="reset-confirm-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                className="w-full px-4 py-3 pl-11 rounded-xl border border-gray-200 dark:border-slate-700 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                 required
                 placeholder="Re-enter your password"
               />
               <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
             {confirmPassword && password !== confirmPassword && (
-              <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><XIcon size={12} /> Passwords don&apos;t match</p>
+              <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1 font-medium"><XIcon size={12} /> Passwords don&apos;t match</p>
+            )}
+            {confirmPassword && password === confirmPassword && confirmPassword.length > 0 && (
+              <p className="text-xs text-green-500 mt-1.5 flex items-center gap-1 font-medium"><Check size={12} /> Passwords match</p>
             )}
           </div>
 
           <button
             type="submit"
-            disabled={loading || !allPassed}
+            id="reset-submit"
+            disabled={loading || !allPassed || password !== confirmPassword}
             className="w-full py-3.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl font-bold hover:shadow-lg hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all disabled:opacity-50"
           >
             {loading ? (

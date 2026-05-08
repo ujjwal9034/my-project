@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import ToastProvider from '@/components/ToastProvider';
 import WarningBanner from '@/components/WarningBanner';
 import BackendWakeup from '@/components/BackendWakeup';
+import ContentWrapper from '@/components/ContentWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -54,14 +55,16 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col transition-colors duration-300 text-gray-900 dark:text-gray-100`}>
         <BackendWakeup />
         <ToastProvider />
-        <Suspense fallback={<div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800"></div>}>
-          <WarningBanner />
-          <Navbar />
-        </Suspense>
-        <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </main>
-        <Footer />
+        <ContentWrapper>
+          <Suspense fallback={<div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800"></div>}>
+            <WarningBanner />
+            <Navbar />
+          </Suspense>
+          <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </main>
+          <Footer />
+        </ContentWrapper>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 services:
-  # Backend Service
+  # Backend API Service (Render)
+  # Frontend is deployed on Vercel (never sleeps)
   - type: web
     name: freshmarket-api
     env: node
@@ -11,8 +12,8 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: MONGODB_URI
-        fromValue: ${MONGODB_URI} # To be set in Render dashboard
+      - key: MONGO_URI
+        sync: false # Set in Render dashboard
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_EMAIL
@@ -20,20 +21,19 @@ services:
       - key: ADMIN_PASSWORD
         value: Arjun@321
       - key: ALLOWED_ORIGIN
-        value: "*" # Or your frontend URL
-
-  # Frontend Service
-  - type: web
-    name: freshmarket-web
-    env: node
-    plan: free
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm run start
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: freshmarket-api
-          property: host
-    # This ensures the backend starts first
-    autoDeploy: true
+        sync: false # Set to your Vercel frontend URL
+      - key: FRONTEND_URL
+        sync: false # Set to your Vercel frontend URL
+      # SMTP Configuration (set in Render dashboard)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: FROM_NAME
+        value: FreshMarket

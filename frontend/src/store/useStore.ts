@@ -66,6 +66,9 @@ interface AppState {
   hideSellerOrder: (orderId: string) => void;
   seenOrderIds: string[];
   markOrderSeen: (orderId: string) => void;
+  // Backend wakeup state (not persisted)
+  backendReady: boolean;
+  setBackendReady: (ready: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -153,9 +156,15 @@ export const useStore = create<AppState>()(
         set((state) => ({
           seenOrderIds: state.seenOrderIds.includes(orderId) ? state.seenOrderIds : [...state.seenOrderIds, orderId]
         })),
+      backendReady: false,
+      setBackendReady: (ready) => set({ backendReady: ready }),
     }),
     {
       name: 'marketplace-storage',
+      partialize: (state) => {
+        const { backendReady, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
