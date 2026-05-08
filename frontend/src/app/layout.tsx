@@ -45,9 +45,15 @@ export default function RootLayout({
                   const parsed = JSON.parse(storage);
                   if (parsed.state && parsed.state.darkMode) {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
+                } else {
+                  document.documentElement.classList.remove('dark');
                 }
-              } catch (e) {}
+              } catch (e) {
+                document.documentElement.classList.remove('dark');
+              }
             `,
           }}
         />

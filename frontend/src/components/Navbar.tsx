@@ -20,8 +20,12 @@ export default function Navbar() {
 
   // Initialize dark mode on mount
   useEffect(() => {
-    if (darkMode && typeof document !== 'undefined') {
-      document.documentElement.classList.add('dark');
+    if (typeof document !== 'undefined') {
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }, [darkMode]);
 
