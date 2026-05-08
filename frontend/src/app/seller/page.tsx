@@ -389,7 +389,7 @@ export default function SellerDashboard() {
                       transition={{ duration: 0.6, delay: i * 0.1 }}
                       className="w-full bg-gradient-to-t from-green-600 to-emerald-400 rounded-t-lg min-h-[4px]"
                     />
-                    <span className="text-[9px] sm:text-[10px] font-semibold text-gray-400">{month.slice(5)}</span>
+                    <span className="text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-gray-400">{month.slice(5)}</span>
                   </div>
                 ));
               })()}
@@ -668,7 +668,7 @@ export default function SellerDashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-12 text-center transition-colors">
               <Package size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
               <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">No products yet</h3>
-              <p className="text-gray-400 dark:text-gray-500">Click &quot;Add New Product&quot; to get started!</p>
+              <p className="text-gray-500 dark:text-gray-500">Click &quot;Add New Product&quot; to get started!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -749,7 +749,7 @@ export default function SellerDashboard() {
 
             {loading && orders.length === 0 ? (
               <div className="h-64 flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <span className="text-gray-400 font-medium">Loading orders...</span>
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Loading orders...</span>
               </div>
             ) : visibleOrders.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
@@ -780,7 +780,7 @@ export default function SellerDashboard() {
                           <span className="text-sm font-bold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md text-gray-700 dark:text-gray-200">
                             Order #{orderNum}
                           </span>
-                          <span className="text-xs text-gray-400 font-mono">({order._id.slice(-8)})</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">({order._id.slice(-8)})</span>
                         </div>
                         <p className="font-bold text-gray-800 dark:text-white">{order.user?.name || 'Customer'}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{order.user?.email}</p>

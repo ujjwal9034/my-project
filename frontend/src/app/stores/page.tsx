@@ -121,7 +121,7 @@ export default function StoresPage() {
         <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700">
           <Store size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">No stores found</h3>
-          <p className="text-gray-400">Try adjusting your search criteria.</p>
+          <p className="text-gray-500 dark:text-gray-400">Try adjusting your search criteria.</p>
         </div>
       )}
     </div>

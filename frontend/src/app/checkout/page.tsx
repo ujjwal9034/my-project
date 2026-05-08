@@ -343,7 +343,7 @@ export default function Checkout() {
                           ) : (
                             <input type="time" value={pickupSlotTime} onChange={e => setPickupSlotTime(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition" />
                           )}
-                          <p className="text-xs text-gray-700 mt-2">These times are provided by the store.</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">These times are provided by the store.</p>
                         </div>
                       </div>
                     )}

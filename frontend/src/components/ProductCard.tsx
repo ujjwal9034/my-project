@@ -142,7 +142,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               {product.name}
             </h3>
             <div className="flex justify-between items-center mb-2">
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-500">
                 Store: <span className="font-semibold text-gray-600 dark:text-gray-300">{sellerName}</span>
               </p>
             </div>
@@ -171,7 +171,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   />
                 ))}
               </div>
-              <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
+              <span className="text-[11px] text-gray-500 dark:text-gray-500 font-medium">
                 ({product.numReviews || 0})
               </span>
             </div>
@@ -180,7 +180,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {/* Price & Cart */}
           <div className="flex items-center justify-between mt-auto pt-2">
             <span className="text-xl font-extrabold text-green-600 dark:text-green-400">
-              ₹{product.price.toFixed(2)} {product.unit && <span className="text-xs text-gray-500 font-medium">/ {product.unit}</span>}
+              ₹{product.price.toFixed(2)} {product.unit && <span className="text-xs text-gray-600 font-medium">/ {product.unit}</span>}
             </span>
             {cartItem ? (
               <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800" onClick={e => e.preventDefault()}>

@@ -69,7 +69,7 @@ function StarInput({ value, onChange }: { value: number; onChange: (v: number) =
         </button>
       ))}
       {value > 0 && (
-        <span className="ml-1 text-xs text-gray-400 font-medium">{value}/5</span>
+        <span className="ml-1 text-xs text-gray-500 dark:text-gray-400 font-medium">{value}/5</span>
       )}
     </div>
   );
@@ -229,7 +229,7 @@ export default function ReportsPage() {
                         {icon}
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
                         <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{value}</p>
                       </div>
                     </div>
@@ -271,10 +271,10 @@ export default function ReportsPage() {
                             {r.rating && <Stars rating={r.rating} />}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               {new Date(r.createdAt).toLocaleDateString()}
                             </span>
-                            {isOpen ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                            {isOpen ? <ChevronUp size={16} className="text-gray-500 dark:text-gray-400" /> : <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />}
                           </div>
                         </button>
 
@@ -300,7 +300,7 @@ export default function ReportsPage() {
                                     #{String(orderId).slice(-8).toUpperCase()}
                                   </Link>
                                   {r.order?.createdAt && (
-                                    <span className="ml-2 text-gray-400">
+                                    <span className="ml-2 text-gray-500 dark:text-gray-400">
                                       placed {new Date(r.order.createdAt).toLocaleDateString()}
                                     </span>
                                   )}
@@ -308,7 +308,7 @@ export default function ReportsPage() {
 
                                 {/* Message */}
                                 <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4">
-                                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Your message</p>
+                                  <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Your message</p>
                                   <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">{r.message}</p>
                                 </div>
 
@@ -323,7 +323,7 @@ export default function ReportsPage() {
                                 )}
 
                                 {/* Timestamps */}
-                                <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+                                <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
                                   <span>Submitted: <strong className="text-gray-600 dark:text-gray-300">{new Date(r.createdAt).toLocaleString()}</strong></span>
                                   {r.updatedAt !== r.createdAt && (
                                     <span>Last updated: <strong className="text-gray-600 dark:text-gray-300">{new Date(r.updatedAt).toLocaleString()}</strong></span>
@@ -357,7 +357,7 @@ export default function ReportsPage() {
                     Select Order <span className="text-red-500">*</span>
                   </label>
                   {ordersLoading ? (
-                    <div className="flex items-center gap-2 text-gray-400 text-sm py-2">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm py-2">
                       <Loader2 size={16} className="animate-spin" /> Loading your orders…
                     </div>
                   ) : (
@@ -425,7 +425,7 @@ export default function ReportsPage() {
                     }
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm resize-none"
                   />
-                  <p className="text-xs text-gray-400 mt-1">{form.message.length} characters</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{form.message.length} characters</p>
                 </div>
 
                 <button

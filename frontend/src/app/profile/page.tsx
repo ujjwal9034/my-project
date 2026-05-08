@@ -472,7 +472,7 @@ export default function Profile() {
                             <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
                               <Store size={18} className="text-green-500 flex-shrink-0" />
                               <span className="font-bold text-gray-800 dark:text-white text-sm">{group.sellerName}</span>
-                              <span className="ml-auto text-xs text-gray-400">{group.orders.length} order{group.orders.length !== 1 ? 's' : ''}</span>
+                              <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">{group.orders.length} order{group.orders.length !== 1 ? 's' : ''}</span>
                             </div>
 
                             <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -489,11 +489,11 @@ export default function Profile() {
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-bold text-gray-900 dark:text-white text-sm">
-                                          Order #{orderIdx + 1} &mdash; <span className="font-mono text-xs text-gray-400">{order._id.slice(-8).toUpperCase()}</span>
+                                          Order #{orderIdx + 1} &mdash; <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{order._id.slice(-8).toUpperCase()}</span>
                                         </span>
                                         <StatusBadge status={order.status} />
                                       </div>
-                                      <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                                         <span>{new Date(order.createdAt).toLocaleString()}</span>
                                         <span className={`inline-flex items-center gap-1 font-semibold ${
                                           order.deliveryType === 'Pickup' ? 'text-purple-500' : 'text-blue-500'

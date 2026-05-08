@@ -275,8 +275,8 @@ export default function AdminDashboard() {
                         transition={{ duration: 0.6, delay: i * 0.1 }}
                         className="w-full bg-gradient-to-t from-green-600 to-emerald-400 rounded-t-lg min-h-[4px]"
                       />
-                      <span className="text-[10px] font-semibold text-gray-400">{m._id.slice(5)}</span>
-                      <span className="text-[9px] text-gray-400">{m.orders} orders</span>
+                      <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">{m._id.slice(5)}</span>
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{m.orders} orders</span>
                     </div>
                   ));
                 })()}
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
                             className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
                           />
                         </div>
-                        <span className="text-[10px] text-gray-400">{s.orders} orders</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">{s.orders} orders</span>
                       </div>
                     </div>
                   ));
@@ -345,7 +345,7 @@ export default function AdminDashboard() {
                       <span className="uppercase text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">{act.actionType}</span>
                       <p className="text-gray-500 dark:text-gray-400 mt-1">{act.notes}</p>
                     </div>
-                    <div className="text-xs text-gray-400 mt-2 sm:mt-0">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 sm:mt-0">
                       {new Date(act.timestamp).toLocaleString()}
                     </div>
                   </div>
@@ -541,7 +541,7 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       <strong>Target:</strong> {report.seller?.name} (Store: {report.seller?.storeName})
                     </p>
-                    <p className="text-xs text-gray-400 mt-1 font-mono">Order #{report.order?._id.slice(-8)} • {new Date(report.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono">Order #{report.order?._id.slice(-8)} • {new Date(report.createdAt).toLocaleString()}</p>
                   </div>
                   {report.rating && (
                     <div className="bg-yellow-50 text-yellow-700 font-bold px-3 py-1 rounded-lg text-sm">
@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl mb-4 text-sm text-gray-800 text-gray-700 dark:text-gray-200">
+                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl mb-4 text-sm text-gray-700 dark:text-gray-200">
                   "{report.message}"
                 </div>
 
