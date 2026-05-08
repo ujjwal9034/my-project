@@ -7,26 +7,34 @@ interface SendEmailOptions {
   html?: string;
 }
 
+// Log SMTP config on module load (once) so we can see in Render logs
+console.log('📧 Email Config Check:', {
+  SMTP_HOST: process.env.SMTP_HOST || '❌ NOT SET',
+  SMTP_PORT: process.env.SMTP_PORT || '❌ NOT SET',
+  SMTP_USER: process.env.SMTP_USER ? '✅ SET' : '❌ NOT SET',
+  SMTP_PASS: process.env.SMTP_PASS ? `✅ SET (${process.env.SMTP_PASS.length} chars)` : '❌ NOT SET',
+  SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL || '❌ NOT SET',
+  FRONTEND_URL: process.env.FRONTEND_URL || '❌ NOT SET',
+});
+
 /**
  * Sends an email using configured SMTP settings.
  * 
- * Supports three modes:
- * 1. Production: Uses real SMTP (e.g. Gmail, SendGrid, Mailgun, etc.)
- * 2. Development with SMTP vars: Uses whatever SMTP you configure
- * 3. Development without SMTP vars: Logs email to console (no real send)
+ * Supports Gmail (via service or host) and generic SMTP.
+ * Falls back to console logging if no SMTP is configured.
  */
 const sendEmail = async (options: SendEmailOptions) => {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT) || 587;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@freshmarket.com';
+  const fromEmail = process.env.SMTP_FROM_EMAIL || user || 'noreply@freshmarket.com';
   const fromName = process.env.FROM_NAME || 'FreshMarket';
 
   // ── Dev fallback: if no SMTP configured, log email to console ─────────────
-  if (!host || !user || !pass) {
+  if (!user || !pass) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📧 EMAIL (Console Mode — no SMTP configured)');
+    console.log('📧 EMAIL (Console Mode — no SMTP credentials configured)');
     console.log(`   To:      ${options.email}`);
     console.log(`   Subject: ${options.subject}`);
     console.log(`   Body:\n${options.message}`);
@@ -35,24 +43,40 @@ const sendEmail = async (options: SendEmailOptions) => {
   }
 
   // ── Build transporter ─────────────────────────────────────────────────────
-  const isSecurePort = port === 465;
+  let transporter;
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: isSecurePort,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      rejectUnauthorized: false, // Needed for shared hosting / Render
-    },
-    // Connection timeout (10s connect, 30s overall)
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 30000,
-  } as any);
+  // Use Gmail service mode if host is gmail
+  const isGmail = host?.includes('gmail') || user?.includes('gmail');
+
+  if (isGmail) {
+    console.log('📧 Using Gmail service mode for:', user);
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user,
+        pass,
+      },
+    });
+  } else {
+    // Generic SMTP
+    const isSecurePort = port === 465;
+    console.log(`📧 Using SMTP host mode: ${host}:${port}`);
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: isSecurePort,
+      auth: {
+        user,
+        pass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 30000,
+    } as any);
+  }
 
   // Build beautiful HTML email
   const htmlContent = options.html || buildEmailHtml(options.subject, options.message);
@@ -66,11 +90,18 @@ const sendEmail = async (options: SendEmailOptions) => {
   };
 
   try {
+    console.log(`📧 Sending email to ${options.email} | Subject: ${options.subject}`);
     const info = await transporter.sendMail(message);
     console.log(`✅ Email sent successfully to ${options.email} (messageId: ${info.messageId})`);
   } catch (error: any) {
     console.error('❌ Error sending email:', error.message);
-    console.error('   SMTP Config:', { host, port, user: user ? '***set***' : 'MISSING' });
+    console.error('   Full error:', JSON.stringify(error, null, 2));
+    console.error('   SMTP Config:', {
+      host: isGmail ? 'gmail-service' : host,
+      port,
+      user: user ? user.substring(0, 5) + '***' : 'MISSING',
+      passLength: pass ? pass.length : 0,
+    });
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };
@@ -102,13 +133,13 @@ function buildEmailHtml(subject: string, textContent: string): string {
           </p>
         `;
       }
-      // Detect 6-digit codes and style them
+      // Detect 6-digit codes and style them prominently
       const codeMatch = line.match(/\b(\d{6})\b/);
       if (codeMatch) {
         const code = codeMatch[1];
         const textParts = line.split(code);
         return `
-          <p style="margin: 0 0 8px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">${textParts[0]}</p>
+          ${textParts[0] ? `<p style="margin: 0 0 8px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">${textParts[0]}</p>` : ''}
           <div style="text-align: center; margin: 20px 0;">
             <div style="display: inline-block; background: linear-gradient(135deg, #f0fdf4, #dcfce7); padding: 16px 40px; border-radius: 16px; border: 2px dashed #22c55e;">
               <span style="font-size: 36px; font-weight: 800; letter-spacing: 12px; color: #16a34a; font-family: 'Courier New', monospace;">${code}</span>
