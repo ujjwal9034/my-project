@@ -119,6 +119,40 @@ app.get('/api/ping', (req, res) => {
   res.json({ message: 'pong' });
 });
 
+// Email diagnostic endpoint
+app.get('/api/test-email', async (req, res) => {
+  const config = {
+    SMTP_USER: process.env.SMTP_USER ? `✅ ${process.env.SMTP_USER}` : '❌ NOT SET',
+    SMTP_PASS: process.env.SMTP_PASS ? `✅ SET (${process.env.SMTP_PASS.length} chars)` : '❌ NOT SET',
+    SMTP_HOST: process.env.SMTP_HOST || '(not needed for Gmail service mode)',
+    SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL || '(will use SMTP_USER)',
+    FRONTEND_URL: process.env.FRONTEND_URL || '❌ NOT SET',
+  };
+
+  // If ?send=1&to=email@example.com is provided, attempt to send a test email
+  const sendTo = req.query.to as string;
+  const shouldSend = req.query.send === '1' && sendTo;
+
+  if (shouldSend) {
+    try {
+      const sendEmail = (await import('./utils/sendEmail')).default;
+      await sendEmail({
+        email: sendTo,
+        subject: 'FreshMarket - Test Email ✅',
+        message: `This is a test email from FreshMarket!\n\nIf you received this, your email configuration is working correctly.\n\nHere is a test verification code: 123456\n\nSent at: ${new Date().toISOString()}`,
+      });
+      res.json({ success: true, message: `Test email sent to ${sendTo}`, config });
+    } catch (error: any) {
+      res.json({ success: false, error: error.message, config });
+    }
+  } else {
+    res.json({ 
+      message: 'Email config status. Add ?send=1&to=your@email.com to send a test.',
+      config 
+    });
+  }
+});
+
 // Import Routes
 import userRoutes from './routes/userRoutes';
 import productRoutes from './routes/productRoutes';
