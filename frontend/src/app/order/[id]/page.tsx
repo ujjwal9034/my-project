@@ -201,9 +201,28 @@ export default function OrderDetails() {
     );
   }
 
-  const statuses = ['Pending', 'Packed', 'Shipped', 'Delivered'];
-  const currentStatusIndex = statuses.indexOf(order.status) === -1 ? 0 : statuses.indexOf(order.status);
-  const progressPercent = (currentStatusIndex / (statuses.length - 1)) * 100;
+  const isDelivery = order.deliveryType !== 'Pickup';
+  const statuses = isDelivery
+    ? ['Pending', 'Packed', 'Shipped', 'Delivered']
+    : ['Pending', 'Packed', 'Ready for Pickup', 'Picked Up'];
+  const isCancelled = order.status === 'Cancelled';
+  const currentStatusIndex = isCancelled ? -1 : statuses.indexOf(order.status);
+  const isActive = !isCancelled && !['Delivered', 'Picked Up'].includes(order.status);
+
+  const stepMeta: Record<string, { icon: any; desc: string; color: string }> = {
+    'Pending':          { icon: Clock,       desc: 'Order received and being reviewed by the seller', color: 'amber' },
+    'Packed':           { icon: Package,     desc: 'Items packed and ready for dispatch', color: 'blue' },
+    'Shipped':          { icon: Truck,       desc: 'On the way to your delivery address', color: 'indigo' },
+    'Delivered':        { icon: CheckCircle2,desc: 'Successfully delivered to you', color: 'green' },
+    'Ready for Pickup': { icon: ShoppingBag, desc: 'Ready! Visit the store to collect', color: 'indigo' },
+    'Picked Up':        { icon: CheckCircle2,desc: 'You have collected your order', color: 'green' },
+  };
+
+  // Calculate estimated delivery
+  const orderDate = new Date(order.createdAt);
+  const estimatedDate = new Date(orderDate.getTime() + (isDelivery ? 2 : 1) * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const hoursLeft = Math.max(0, Math.round((estimatedDate.getTime() - now.getTime()) / (1000 * 60 * 60)));
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -243,38 +262,138 @@ export default function OrderDetails() {
         </div>
       </div>
 
-      {/* Progress Tracker */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative transition-colors">
-        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-8">Tracking Status</h3>
-        <div className="relative max-w-3xl mx-auto">
-          {/* Progress Line */}
-          <div className="absolute top-6 left-0 w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full ${order.status === 'Cancelled' ? 'bg-red-500' : 'bg-green-500'}`}
-            />
-          </div>
+      {/* ── Premium Live Order Tracking ── */}
+      <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+        {/* Tracking Header */}
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+            {isDelivery ? <Truck className="text-green-500" size={22} /> : <ShoppingBag className="text-green-500" size={22} />}
+            Live Order Tracking
+          </h3>
+          {isActive && (
+            <span className="flex items-center gap-2 text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+              Live Updates
+            </span>
+          )}
+        </div>
 
-          <div className="relative flex justify-between">
+        {/* ETA Banner */}
+        {isActive && !isCancelled && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800/40">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+                  Estimated {isDelivery ? 'Delivery' : 'Ready for Pickup'}
+                </p>
+                <p className="text-lg font-extrabold text-green-700 dark:text-green-400">
+                  {estimatedDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {hoursLeft > 0 && <span className="text-sm font-semibold ml-2 text-green-600 dark:text-green-500">~{hoursLeft}h left</span>}
+                </p>
+              </div>
+              <div className="text-4xl">{isDelivery ? '🚚' : '🏪'}</div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Cancelled Banner */}
+        {isCancelled && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
+              <XCircle className="text-red-500" size={24} />
+            </div>
+            <div>
+              <p className="font-bold text-red-700 dark:text-red-400">Order Cancelled</p>
+              <p className="text-sm text-red-600/70 dark:text-red-400/70">This order has been cancelled. You can reorder anytime.</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Vertical Timeline */}
+        {!isCancelled && (
+          <div className="relative pl-4 sm:pl-8">
             {statuses.map((s, i) => {
-              const isCompleted = i <= currentStatusIndex && order.status !== 'Cancelled';
-              const isCurrent = i === currentStatusIndex && order.status !== 'Cancelled';
-              
+              const isCompleted = i <= currentStatusIndex;
+              const isCurrent = i === currentStatusIndex;
+              const isPast = i < currentStatusIndex;
+              const meta = stepMeta[s] || stepMeta['Pending'];
+              const StepIcon = meta.icon;
+              const isLast = i === statuses.length - 1;
+
               return (
-                <div key={s} className="flex flex-col items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 border-4 transition-all duration-500 ${
-                    isCompleted ? 'bg-green-500 border-green-100 dark:border-green-900 shadow-lg shadow-green-200 dark:shadow-green-900/50 text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600'
-                  }`}>
-                    {s === 'Pending' ? <Clock size={20} /> : s === 'Packed' ? <Package size={20} /> : s === 'Shipped' ? <Truck size={20} /> : <CheckCircle2 size={20} />}
+                <motion.div key={s}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.15, duration: 0.4 }}
+                  className={`relative flex gap-4 sm:gap-6 ${!isLast ? 'pb-8' : ''}`}
+                >
+                  {/* Vertical line */}
+                  {!isLast && (
+                    <div className="absolute left-[19px] sm:left-[23px] top-12 bottom-0 w-0.5">
+                      <div className={`h-full ${isCompleted && !isCurrent ? 'bg-green-400 dark:bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                      {isCurrent && (
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: '100%' }}
+                          transition={{ duration: 2, ease: 'easeInOut' }}
+                          className="absolute top-0 left-0 w-full bg-gradient-to-b from-green-400 to-transparent dark:from-green-600"
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step circle */}
+                  <div className="relative z-10 flex-shrink-0">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-[3px] transition-all duration-500 ${
+                      isCompleted
+                        ? 'bg-green-500 border-green-200 dark:border-green-800 text-white shadow-lg shadow-green-200/50 dark:shadow-green-900/50'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600'
+                    }`}>
+                      <StepIcon size={18} />
+                    </div>
+                    {/* Pulse on current step */}
+                    {isCurrent && isActive && (
+                      <span className="absolute -inset-1 rounded-full animate-ping bg-green-400/30 dark:bg-green-500/20" />
+                    )}
                   </div>
-                  <p className={`mt-3 font-bold text-sm ${isCurrent ? 'text-green-600 dark:text-green-400' : isCompleted ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>{s}</p>
-                </div>
+
+                  {/* Step content */}
+                  <div className={`flex-1 ${isCurrent ? 'bg-green-50/50 dark:bg-green-900/10 -mx-2 px-4 py-3 rounded-2xl border border-green-100 dark:border-green-800/30' : 'pt-1'}`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className={`font-bold text-sm sm:text-base ${
+                        isCurrent ? 'text-green-700 dark:text-green-400' :
+                        isCompleted ? 'text-gray-900 dark:text-white' :
+                        'text-gray-400 dark:text-gray-500'
+                      }`}>{s}</h4>
+                      {isCurrent && isActive && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">Current</span>
+                      )}
+                      {isPast && (
+                        <CheckCircle2 size={14} className="text-green-500" />
+                      )}
+                    </div>
+                    <p className={`text-xs sm:text-sm mt-1 ${isCompleted ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}`}>
+                      {meta.desc}
+                    </p>
+                    {isCompleted && (
+                      <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1.5 flex items-center gap-1">
+                        <Clock size={10} />
+                        {i === 0 ? new Date(order.createdAt).toLocaleString() :
+                         i === statuses.length - 1 && order.deliveredAt ? new Date(order.deliveredAt).toLocaleString() :
+                         new Date(new Date(order.createdAt).getTime() + i * 8 * 60 * 60 * 1000).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
               );
             })}
           </div>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
