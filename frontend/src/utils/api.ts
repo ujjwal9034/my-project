@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: '/api',
   withCredentials: true,
+  timeout: 30000, // 30s timeout — prevents infinite loading on Render cold starts
 });
 
 // Helper to get full image URL from a product imageUrl field

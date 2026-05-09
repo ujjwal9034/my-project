@@ -76,22 +76,41 @@ export default function Login() {
     setLoading(true);
     setError('');
 
-    try {
-      const payload: any = { email, password };
-      if (twoFactorMode) payload.twoFactorCode = twoFactorCode;
-      await handleLogin(payload);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Invalid email or password';
-      setError(msg);
-      toast.error(msg);
-      // If 2FA code was invalid, let user retry
-      if (twoFactorMode && msg.includes('expired')) {
-        setTwoFactorMode(false);
-        setTwoFactorCode('');
+    const payload: any = { email, password };
+    if (twoFactorMode) payload.twoFactorCode = twoFactorCode;
+
+    // Retry logic for Render cold starts
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await handleLogin(payload);
+        setLoading(false);
+        return; // Success — exit
+      } catch (err: any) {
+        const status = err.response?.status;
+        const msg = err.response?.data?.message || '';
+
+        // Backend sleeping — retry
+        if ((!status || status === 502 || status === 503 || status === 504 || err.code === 'ECONNABORTED') && attempt < 3) {
+          toast.loading(`Server waking up... retry ${attempt}/3`, { id: 'login-retry' });
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+
+        toast.dismiss('login-retry');
+
+        const errorMsg = msg || (err.code === 'ECONNABORTED' ? 'Server is starting up. Please try again in 30 seconds.' : 'Invalid email or password');
+        setError(errorMsg);
+        toast.error(errorMsg);
+
+        // If 2FA code was invalid, let user retry
+        if (twoFactorMode && msg.includes('expired')) {
+          setTwoFactorMode(false);
+          setTwoFactorCode('');
+        }
+        break;
       }
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const resendCode = async () => {
