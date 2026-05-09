@@ -13,20 +13,28 @@ let cachedTransporter: nodemailer.Transporter | null = null;
 function getTransporter(user: string, pass: string): nodemailer.Transporter {
   if (cachedTransporter) return cachedTransporter;
 
-  console.log(`📧 Creating Gmail transporter for: ${user}`);
+  console.log(`📧 Creating SMTP transporter for: ${user}`);
+  
+  // Use explicit SMTP config — port 587 + STARTTLS works on Render
+  // (service: 'gmail' uses port 465/SSL which some hosts block)
   cachedTransporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,          // false = STARTTLS on port 587
     auth: { user, pass },
-    pool: true,           // Keep connection alive
-    maxConnections: 3,
-    maxMessages: 100,
+    tls: {
+      rejectUnauthorized: false,  // Needed for Render's network
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 
   // Verify connection in background (logs result, doesn't block)
   cachedTransporter.verify()
-    .then(() => console.log('✅ Gmail SMTP connection verified — emails will send'))
+    .then(() => console.log('✅ SMTP connection verified — emails will send'))
     .catch((err) => {
-      console.error('❌ Gmail SMTP verification FAILED:', err.message);
+      console.error('❌ SMTP verification FAILED:', err.message);
       console.error('   Check SMTP_USER and SMTP_PASS (App Password, no spaces)');
       cachedTransporter = null;
     });
