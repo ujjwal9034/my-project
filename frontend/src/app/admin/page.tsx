@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import api, { getImageUrl } from '@/utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, ShoppingBag, TrendingUp, DollarSign, ShieldCheck, Ban, Check, X, Eye, Store, Clock, AlertCircle, History, MessageSquare } from 'lucide-react';
+import { Users, ShoppingBag, TrendingUp, DollarSign, ShieldCheck, Ban, Check, X, Eye, Store, Clock, AlertCircle, History, MessageSquare, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -17,7 +17,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'orders' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'orders' | 'reports' | 'stores'>('overview');
   const [reports, setReports] = useState<any[]>([]);
   const [recentActions, setRecentActions] = useState<any[]>([]);
   const [adminNotesInput, setAdminNotesInput] = useState<{ [id: string]: string }>({});
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
 
       {/* Navigation */}
       <div className="flex gap-1.5 sm:gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl overflow-x-auto scrollbar-hide">
-        {['overview', 'users', 'reports', 'orders'].map((tab) => (
+        {['overview', 'users', 'stores', 'reports', 'orders'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
@@ -294,13 +294,17 @@ export default function AdminDashboard() {
                 {(() => {
                   const storeRevenue: { [k: string]: { name: string; revenue: number; orders: number } } = {};
                   orders.forEach((o: any) => {
+                    const countedForOrder = new Set<string>();
                     o.orderItems?.forEach((item: any) => {
-                      const sellerId = item.seller || 'unknown';
-                      if (!storeRevenue[sellerId]) storeRevenue[sellerId] = { name: item.sellerName || 'Store', revenue: 0, orders: 0 };
+                      const sellerId = item.seller?._id || item.seller || 'unknown';
+                      const sellerName = item.seller?.storeName || item.seller?.name || 'Unknown Store';
+                      if (!storeRevenue[sellerId]) storeRevenue[sellerId] = { name: sellerName, revenue: 0, orders: 0 };
                       storeRevenue[sellerId].revenue += item.qty * item.price;
+                      if (!countedForOrder.has(sellerId)) {
+                        storeRevenue[sellerId].orders += 1;
+                        countedForOrder.add(sellerId);
+                      }
                     });
-                    const firstSeller = o.orderItems?.[0]?.seller || 'unknown';
-                    if (storeRevenue[firstSeller]) storeRevenue[firstSeller].orders += 1;
                   });
                   const stores = Object.values(storeRevenue).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
                   const maxRev = Math.max(...stores.map(s => s.revenue), 1);
@@ -409,10 +413,20 @@ export default function AdminDashboard() {
                           {u.account_status || (u.isBanned ? 'banned' : 'active')}
                         </span>
                         {u.banReason && <div className="text-xs text-red-500 mt-1">Reason: {u.banReason}</div>}
-                        {u.role === 'seller' && u.kycStatus === 'pending' && u.kycDocument && (
-                          <div className="mt-2 text-[10px]">
-                            <a href={getImageUrl(u.kycDocument)} target="_blank" rel="noreferrer" className="text-blue-500 underline">View KYC Doc</a>
+                        {u.role === 'seller' && u.kycDocument && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <a href={getImageUrl(u.kycDocument)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
+                              <Eye size={12} /> View KYC Document
+                            </a>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                              u.kycStatus === 'verified' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              u.kycStatus === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            }`}>{u.kycStatus || 'pending'}</span>
                           </div>
+                        )}
+                        {u.role === 'seller' && !u.kycDocument && (
+                          <div className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 italic">No KYC uploaded</div>
                         )}
                       </td>
                       <td className="px-6 py-4 font-bold text-gray-700 dark:text-gray-300">
@@ -483,6 +497,21 @@ export default function AdminDashboard() {
                   <span className="text-gray-500 dark:text-gray-400">Warnings: <strong className="text-gray-900 dark:text-white">{u.warningCount || 0}</strong></span>
                 </div>
                 {u.banReason && <p className="text-xs text-red-500">Reason: {u.banReason}</p>}
+                {u.role === 'seller' && u.kycDocument && (
+                  <div className="flex items-center gap-2">
+                    <a href={getImageUrl(u.kycDocument)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-100 transition">
+                      <Eye size={12} /> View KYC
+                    </a>
+                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                      u.kycStatus === 'verified' ? 'bg-green-100 text-green-700' :
+                      u.kycStatus === 'rejected' ? 'bg-red-100 text-red-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }`}>{u.kycStatus || 'pending'}</span>
+                  </div>
+                )}
+                {u.role === 'seller' && !u.kycDocument && (
+                  <div className="text-[10px] text-gray-400 italic">No KYC uploaded</div>
+                )}
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                   {u.role === 'seller' && !u.isApproved && (
                     <button disabled={actionLoadingId === u._id} onClick={() => approveSeller(u._id)} className="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-bold transition disabled:opacity-50">{actionLoadingId === u._id ? 'Approving...' : 'Approve'}</button>
@@ -514,6 +543,126 @@ export default function AdminDashboard() {
       )}
 
       
+      {/* STORES TAB */}
+      {activeTab === 'stores' && (() => {
+        const sellers = users.filter((u: any) => u.role === 'seller');
+        const storeOrderMap: { [k: string]: { revenue: number; orders: number } } = {};
+        orders.forEach((o: any) => {
+          const counted = new Set<string>();
+          o.orderItems?.forEach((item: any) => {
+            const sid = item.seller?._id || item.seller || '';
+            if (!storeOrderMap[sid]) storeOrderMap[sid] = { revenue: 0, orders: 0 };
+            storeOrderMap[sid].revenue += item.qty * item.price;
+            if (!counted.has(sid)) { storeOrderMap[sid].orders += 1; counted.add(sid); }
+          });
+        });
+
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            {sellers.length === 0 ? (
+              <div className="h-64 flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <Store size={48} className="text-gray-300 dark:text-gray-600 mb-4" />
+                <p className="text-lg text-gray-500 dark:text-gray-400">No registered stores yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sellers.map((s: any) => {
+                  const sStats = storeOrderMap[s._id] || { revenue: 0, orders: 0 };
+                  return (
+                    <motion.div
+                      key={s._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+                    >
+                      <div className="p-5">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 shadow">
+                            {(s.storeName || s.name).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-gray-900 dark:text-white text-lg truncate">{s.storeName || s.name}</h3>
+                              {s.isApproved ? (
+                                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Approved</span>
+                              ) : (
+                                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{s.email}</p>
+                            {s.address && <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-0.5"><MapPin size={10} /> {s.address}</p>}
+                          </div>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl text-center">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Revenue</p>
+                            <p className="text-sm font-extrabold text-green-600 dark:text-green-400">₹{sStats.revenue.toFixed(0)}</p>
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl text-center">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Orders</p>
+                            <p className="text-sm font-extrabold text-gray-900 dark:text-white">{sStats.orders}</p>
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl text-center">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Warnings</p>
+                            <p className="text-sm font-extrabold text-gray-900 dark:text-white">{s.warningCount || 0}</p>
+                          </div>
+                        </div>
+
+                        {/* KYC Section */}
+                        <div className="mb-4 p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold uppercase text-gray-500">KYC Document</span>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                              s.kycStatus === 'verified' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              s.kycStatus === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              s.kycStatus === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                              'bg-gray-100 text-gray-500'
+                            }`}>{s.kycStatus || 'not submitted'}</span>
+                          </div>
+                          {s.kycDocument ? (
+                            <a
+                              href={getImageUrl(s.kycDocument)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold transition"
+                            >
+                              <Eye size={14} /> Open KYC Document →
+                            </a>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic">No document uploaded</p>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap gap-2">
+                          {!s.isApproved && (
+                            <button onClick={() => approveSeller(s._id)} disabled={actionLoadingId === s._id} className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition disabled:opacity-50">
+                              {actionLoadingId === s._id ? 'Approving...' : '✓ Approve'}
+                            </button>
+                          )}
+                          {s.kycStatus === 'pending' && s.kycDocument && (
+                            <>
+                              <button onClick={() => setActionModal({ isOpen: true, userId: s._id, action: 'verify_kyc', userName: s.name })} className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition">Verify KYC</button>
+                              <button onClick={() => setActionModal({ isOpen: true, userId: s._id, action: 'reject_kyc', userName: s.name })} className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition">Reject KYC</button>
+                            </>
+                          )}
+                          <Link href={`/?seller=${s._id}`} className="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition">View Products</Link>
+                          {s.account_status !== 'banned' && !s.isBanned && s._id !== userInfo?._id && (
+                            <button onClick={() => setActionModal({ isOpen: true, userId: s._id, action: 'ban', userName: s.name })} className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition">Ban</button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        );
+      })()}
+
       {/* REPORTS TAB */}
       {activeTab === 'reports' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">

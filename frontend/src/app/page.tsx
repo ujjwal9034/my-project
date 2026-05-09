@@ -22,12 +22,14 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const keywordFromUrl = searchParams.get('keyword') || '';
   const categoryFromUrl = searchParams.get('category') || '';
+  const sellerFromUrl = searchParams.get('seller') || '';
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl || 'All');
   const [sortBy, setSortBy] = useState('');
   const [keyword, setKeyword] = useState(keywordFromUrl);
+  const [sellerFilter, setSellerFilter] = useState(sellerFromUrl);
   const [showBackToTop, setShowBackToTop] = useState(false);
   
   const { location, setLocation } = useStore();
@@ -38,6 +40,7 @@ function HomeContent() {
     try {
       const params: any = {};
       if (keyword) params.keyword = keyword;
+      if (sellerFilter) params.seller = sellerFilter;
       if (selectedCategory !== 'All') params.category = selectedCategory;
       if (sortBy) params.sort = sortBy;
       if (location) {
@@ -51,7 +54,7 @@ function HomeContent() {
     } finally {
       setLoading(false);
     }
-  }, [keyword, selectedCategory, sortBy, location]);
+  }, [keyword, sellerFilter, selectedCategory, sortBy, location]);
 
   useEffect(() => {
     fetchProducts();
@@ -59,7 +62,8 @@ function HomeContent() {
 
   useEffect(() => {
     setKeyword(keywordFromUrl);
-  }, [keywordFromUrl]);
+    setSellerFilter(sellerFromUrl);
+  }, [keywordFromUrl, sellerFromUrl]);
 
   useEffect(() => {
     if (categoryFromUrl) {

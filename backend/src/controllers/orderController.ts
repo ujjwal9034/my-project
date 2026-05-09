@@ -254,6 +254,9 @@ export const getSellerOrders = asyncHandler(async (req: AuthRequest, res: Respon
 // @route   GET /api/orders
 // @access  Private/Admin
 export const getOrders = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const orders = await Order.find({}).populate('user', 'id name').sort({ createdAt: -1 });
+  const orders = await Order.find({})
+    .populate('user', 'id name email')
+    .populate('orderItems.seller', 'name storeName')
+    .sort({ createdAt: -1 });
   res.json(orders);
 });

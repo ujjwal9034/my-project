@@ -22,6 +22,11 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
     };
   }
 
+  // Seller filter (for store-specific product pages)
+  if (req.query.seller) {
+    filter.seller = req.query.seller;
+  }
+
   // Category filter
   if (req.query.category && req.query.category !== 'All') {
     filter.category = req.query.category;

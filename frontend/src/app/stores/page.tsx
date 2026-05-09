@@ -109,7 +109,7 @@ export default function StoresPage() {
               </div>
 
               <Link
-                href={`/?keyword=${encodeURIComponent(store.storeName || store.name)}`}
+                href={`/?seller=${store._id}`}
                 className="w-full py-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-center font-semibold hover:bg-green-600 hover:text-white transition-colors border border-gray-100 dark:border-gray-700 group-hover:border-transparent"
               >
                 View Products
