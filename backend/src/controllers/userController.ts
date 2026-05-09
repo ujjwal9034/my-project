@@ -60,16 +60,14 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
         user.twoFactorCodeExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
         await user.save();
         
-        try {
-          await sendEmail({
-            email: user.email,
-            subject: 'FreshMarket - Your 2FA Login Code',
-            message: `Your two-factor authentication code is: ${code}\nThis code expires in 10 minutes.\nIf you didn't request this, please ignore this email.`,
-          });
-        } catch (emailErr: any) {
+        // Fire-and-forget: send email in background for instant response
+        sendEmail({
+          email: user.email,
+          subject: 'FreshMarket — Your Login Code',
+          message: `Your two-factor authentication code is: ${code}\nThis code expires in 10 minutes.\nIf you didn't request this, please ignore this email.`,
+        }).catch((emailErr: any) => {
           console.error('❌ Failed to send 2FA email:', emailErr.message);
-          // Don't block login — still return requires2FA so user knows to check
-        }
+        });
 
         res.json({ requires2FA: true, message: '2FA code sent to your email. Check your inbox.' });
         return;
@@ -635,22 +633,16 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password.\n\nPlease click the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 10 minutes.\n\nIf you did not request this, please ignore this email.`;
 
-  try {
-    await sendEmail({
-      email: user.email,
-      subject: 'FreshMarket — Password Reset Request',
-      message,
-    });
+  // Fire-and-forget: send email in background for instant response
+  sendEmail({
+    email: user.email,
+    subject: 'FreshMarket — Password Reset Request',
+    message,
+  }).catch((error) => {
+    console.error('❌ Failed to send password reset email:', (error as any).message);
+  });
 
-    res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
-  } catch (error) {
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
-
-    res.status(500);
-    throw new Error('Email could not be sent. Please try again later.');
-  }
+  res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
 });
 
 // @desc    Reset password

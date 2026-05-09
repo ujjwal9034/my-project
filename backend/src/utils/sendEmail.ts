@@ -7,6 +7,33 @@ interface SendEmailOptions {
   html?: string;
 }
 
+// ── Persistent transporter cache (reuse SMTP connection) ──
+let cachedTransporter: nodemailer.Transporter | null = null;
+
+function getTransporter(user: string, pass: string): nodemailer.Transporter {
+  if (cachedTransporter) return cachedTransporter;
+
+  console.log(`📧 Creating Gmail transporter for: ${user}`);
+  cachedTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+    pool: true,           // Keep connection alive
+    maxConnections: 3,
+    maxMessages: 100,
+  });
+
+  // Verify connection in background (logs result, doesn't block)
+  cachedTransporter.verify()
+    .then(() => console.log('✅ Gmail SMTP connection verified — emails will send'))
+    .catch((err) => {
+      console.error('❌ Gmail SMTP verification FAILED:', err.message);
+      console.error('   Check SMTP_USER and SMTP_PASS (App Password, no spaces)');
+      cachedTransporter = null;
+    });
+
+  return cachedTransporter;
+}
+
 /**
  * Sends an email using Gmail App Password.
  * Falls back to console if no credentials are set.
@@ -26,11 +53,8 @@ const sendEmail = async (options: SendEmailOptions) => {
     return;
   }
 
-  // ── Create Gmail transporter ──
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass },
-  });
+  // ── Reuse cached transporter for speed ──
+  const transporter = getTransporter(user, pass);
 
   const htmlContent = options.html || buildPremiumEmail(options.subject, options.message);
 
@@ -49,6 +73,8 @@ const sendEmail = async (options: SendEmailOptions) => {
     console.error(`   Code: ${error.code || 'none'}`);
     console.error(`   SMTP_USER: ${user}`);
     console.error(`   SMTP_PASS length: ${pass.length} chars`);
+    // Reset transporter so next attempt creates a fresh one
+    cachedTransporter = null;
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };
