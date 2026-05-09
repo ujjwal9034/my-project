@@ -245,10 +245,15 @@ export default function OrderDetails() {
             <p className="text-3xl font-extrabold text-gray-900 dark:text-white">₹{order.totalPrice.toFixed(2)}</p>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {order.status === 'Pending' && order.user?._id === userInfo?._id && (
+            {['Pending', 'Packed'].includes(order.status) && order.user?._id === userInfo?._id && (
               <button onClick={() => setShowCancelModal(true)} className="text-sm font-bold px-4 py-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition rounded-xl flex items-center gap-1 shadow-sm">
-                <XCircle size={16} /> Cancel
+                <XCircle size={16} /> Cancel Order
               </button>
+            )}
+            {['Shipped', 'Ready for Pickup'].includes(order.status) && order.user?._id === userInfo?._id && (
+              <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1.5 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <XCircle size={14} /> Cancellation not available after dispatch
+              </div>
             )}
             {(order.status === 'Delivered' || order.status === 'Picked Up') && order.user?._id === userInfo?._id && (
               <button onClick={handleReorder} disabled={reordering} className="text-sm font-bold px-4 py-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50">
@@ -481,7 +486,10 @@ export default function OrderDetails() {
         onClose={() => setShowCancelModal(false)}
         onConfirm={cancelOrder}
         title="Cancel Order"
-        message="Are you sure you want to cancel this pending order? This action cannot be undone."
+        message={order.status === 'Packed' 
+          ? "⚠️ This order has already been packed by the seller. Are you sure you want to cancel? This may affect the seller and cannot be undone."
+          : "Are you sure you want to cancel this order? This action cannot be undone."
+        }
         confirmText="Yes, Cancel Order"
         isDanger={true}
       />

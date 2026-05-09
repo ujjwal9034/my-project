@@ -177,9 +177,13 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
     const isBuyer = (order.user as any)._id?.toString() === req.user._id.toString() || order.user.toString() === req.user._id.toString();
 
     if (!isSeller && req.user.role !== 'admin') {
-      // Allow buyer to cancel only if order is still Pending
-      if (isBuyer && req.body.status === 'Cancelled' && order.status === 'Pending') {
-        // Allowed
+      // Allow buyer to cancel only if order is still Pending or Packed
+      const cancelableStatuses = ['Pending', 'Packed'];
+      if (isBuyer && req.body.status === 'Cancelled' && cancelableStatuses.includes(order.status)) {
+        // Allowed — order hasn't shipped yet
+      } else if (isBuyer && req.body.status === 'Cancelled' && !cancelableStatuses.includes(order.status)) {
+        res.status(400);
+        throw new Error('Order cannot be cancelled after it has been shipped. Please contact the seller for assistance.');
       } else {
         res.status(403);
         throw new Error('Not authorized to update this order');
