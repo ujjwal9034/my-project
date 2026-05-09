@@ -28,24 +28,56 @@ export default function ForgotPassword() {
     setLoading(true);
     setError('');
 
-    try {
-      const { data } = await api.post('/users/forgot-password', { email });
-      setSent(true);
-      setResendCooldown(60); // 60 second cooldown
-      toast.success('Reset link sent! Check your email.');
-    } catch (err: any) {
-      const msg = err.response?.data?.message;
-      if (msg && msg.includes('Email could not be sent')) {
-        setError('We couldn\'t send the email right now. Please try again in a few minutes.');
-        toast.error('Email service temporarily unavailable');
-      } else {
-        // Still show success for security (don't reveal if user exists)
+    // Retry logic for Render cold starts (502 errors)
+    let lastError: any = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const { data } = await api.post('/users/forgot-password', { email });
         setSent(true);
         setResendCooldown(60);
+        toast.success('Reset link sent! Check your email.');
+        setLoading(false);
+        return;
+      } catch (err: any) {
+        lastError = err;
+        const status = err.response?.status;
+        const msg = err.response?.data?.message;
+
+        // If it's a 502/503/504 (backend waking up), retry
+        if ((!status || status === 502 || status === 503 || status === 504) && attempt < 3) {
+          console.log(`Attempt ${attempt} failed (${status || 'network error'}), retrying in 3s...`);
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+
+        // Known error from backend: email couldn't be sent
+        if (msg && msg.includes('Email could not be sent')) {
+          setError('We couldn\'t send the email right now. Please try again in a few minutes.');
+          toast.error('Email service temporarily unavailable');
+          break;
+        }
+
+        // If status is 200-range response (user not found but we show success for security)
+        if (status === 404 || (msg && msg.includes('reset link has been sent'))) {
+          setSent(true);
+          setResendCooldown(60);
+          break;
+        }
+
+        // Server/network error — show clear error
+        if (!status || status >= 500) {
+          setError('Server is starting up. Please wait 30 seconds and try again.');
+          toast.error('Server is waking up, please retry shortly');
+          break;
+        }
+
+        // Other errors
+        setError(msg || 'Something went wrong. Please try again.');
+        toast.error(msg || 'Request failed');
+        break;
       }
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const resendEmail = async () => {
