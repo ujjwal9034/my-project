@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import api, { getImageUrl } from '@/utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Upload, X, Camera, Trash2, Edit3, Plus, TrendingUp, ShoppingBag, Save, MapPin, AlertTriangle, Bell, Eye, Shield } from 'lucide-react';
+import { Package, Upload, X, Camera, Trash2, Edit3, Plus, TrendingUp, ShoppingBag, Save, MapPin, AlertTriangle, Bell, Eye, Shield, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '@/components/ConfirmationModal';
 
@@ -728,22 +728,27 @@ export default function SellerDashboard() {
         const visibleOrders = orders.filter(o => !sellerHiddenOrderIds.includes(o._id));
         const pendingCount = visibleOrders.filter(o => o.status === 'Pending').length;
         const deliveredCount = visibleOrders.filter(o => o.status === 'Delivered' || o.status === 'Picked Up').length;
+        const activeCount = visibleOrders.filter(o => ['Packed', 'Shipped', 'Ready for Pickup'].includes(o.status)).length;
 
         return (
           <div className="space-y-6">
             {/* Summary Bar */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center"><ShoppingBag size={20} className="text-blue-500" /></div>
-                <div><p className="text-xs text-gray-500 uppercase font-bold">Total Orders</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{visibleOrders.length}</p></div>
+                <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{visibleOrders.length}</p></div>
               </div>
               <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
                 <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl flex items-center justify-center"><Bell size={20} className="text-yellow-500" /></div>
-                <div><p className="text-xs text-gray-500 uppercase font-bold">Pending</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{pendingCount}</p></div>
+                <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending</p><p className="text-xl font-extrabold text-yellow-600 dark:text-yellow-400">{pendingCount}</p></div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center"><Truck size={20} className="text-indigo-500" /></div>
+                <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">In Progress</p><p className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">{activeCount}</p></div>
               </div>
               <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center"><Package size={20} className="text-green-500" /></div>
-                <div><p className="text-xs text-gray-500 uppercase font-bold">Delivered</p><p className="text-xl font-extrabold text-gray-900 dark:text-white">{deliveredCount}</p></div>
+                <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Completed</p><p className="text-xl font-extrabold text-green-600 dark:text-green-400">{deliveredCount}</p></div>
               </div>
             </div>
 
@@ -760,102 +765,182 @@ export default function SellerDashboard() {
               visibleOrders.map((order: any, index: number) => {
                 const isNew = !seenOrderIds.includes(order._id);
                 const orderNum = visibleOrders.length - index;
+                const isPickup = order.deliveryType === 'Pickup';
+                const oStatuses = isPickup
+                  ? ['Pending', 'Packed', 'Ready for Pickup', 'Picked Up']
+                  : ['Pending', 'Packed', 'Shipped', 'Delivered'];
+                const oIdx = oStatuses.indexOf(order.status);
+                const isCancelled = order.status === 'Cancelled';
+                const isDone = ['Delivered', 'Picked Up'].includes(order.status);
+                const nextStatus = !isCancelled && !isDone && oIdx < oStatuses.length - 1 ? oStatuses[oIdx + 1] : null;
 
                 return (
                   <motion.div
                     key={order._id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors relative"
+                    transition={{ delay: index * 0.05 }}
+                    className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm border transition-colors relative overflow-hidden ${
+                      isNew ? 'border-green-300 dark:border-green-700 ring-1 ring-green-200 dark:ring-green-800' : 'border-gray-100 dark:border-gray-700'
+                    }`}
                   >
+                    {/* New Order Indicator Bar */}
                     {isNew && (
-                      <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border-2 border-white dark:border-gray-800 animate-pulse">
-                        NEW
-                      </div>
+                      <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-400 to-green-500 animate-pulse" />
                     )}
 
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 pb-4 border-b border-gray-50 dark:border-gray-700">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-bold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md text-gray-700 dark:text-gray-200">
-                            Order #{orderNum}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">({order._id.slice(-8)})</span>
-                        </div>
-                        <p className="font-bold text-gray-800 dark:text-white">{order.user?.name || 'Customer'}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{order.user?.email}</p>
-                      </div>
-                      <div className="mt-2 sm:mt-0 flex flex-col items-end gap-2">
-                        <span className="text-lg font-extrabold text-gray-900 dark:text-white">₹{order.totalPrice?.toFixed(2)}</span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                          order.status === 'Pending' ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200' :
-                          order.status === 'Packed' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200' :
-                          order.status === 'Shipped' || order.status === 'Ready for Pickup' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200' :
-                          order.status === 'Delivered' || order.status === 'Picked Up' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200' :
-                          'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {order.deliveryType === 'Pickup' && (
-                      <div className="mb-4 text-sm bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 px-4 py-3 rounded-xl border border-orange-100 dark:border-orange-800/30 font-medium">
-                        Store Pickup requested at: {order.pickupSlotTime}
-                      </div>
-                    )}
-                    
-                    <div className="space-y-2 mb-4">
-                      {order.orderItems
-                        .filter((item: any) => item.seller?.toString() === userInfo?._id || item.seller?._id === userInfo?._id)
-                        .map((item: any, i: number) => (
-                          <div key={i} className="flex justify-between items-center text-sm bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg">
-                            <span className="text-gray-700 dark:text-gray-300">{item.qty}x {item.name}</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">₹{(item.price * item.qty).toFixed(2)}</span>
+                    <div className="p-5 sm:p-6">
+                      {/* Order Header */}
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3 mb-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            isCancelled ? 'bg-red-100 dark:bg-red-900/30' :
+                            isDone ? 'bg-green-100 dark:bg-green-900/30' :
+                            isNew ? 'bg-green-100 dark:bg-green-900/30' :
+                            'bg-gray-100 dark:bg-gray-700'
+                          }`}>
+                            <span className="text-lg font-extrabold text-gray-600 dark:text-gray-300">#{orderNum}</span>
                           </div>
-                        ))}
-                    </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-bold text-gray-900 dark:text-white">{order.user?.name || 'Customer'}</p>
+                              {isNew && <span className="text-[10px] font-bold uppercase tracking-wider bg-green-500 text-white px-2 py-0.5 rounded-full">New</span>}
+                              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                isPickup ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                              }`}>{isPickup ? '🏪 Pickup' : '🚚 Delivery'}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{order.user?.email} · {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                            {order.shippingAddress && !isPickup && (
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
+                                <MapPin size={10} /> {order.shippingAddress.address}, {order.shippingAddress.city}
+                              </p>
+                            )}
+                            {isPickup && order.pickupSlotTime && (
+                              <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5 font-semibold">⏰ Pickup: {order.pickupSlotTime}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+                          <span className="text-xl font-extrabold text-gray-900 dark:text-white">₹{order.totalPrice?.toFixed(2)}</span>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+                            isDone ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                            order.status === 'Pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' :
+                            'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                          }`}>{order.status}</span>
+                        </div>
+                      </div>
 
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pt-4 border-t border-gray-50 dark:border-gray-700">
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <select 
+                      {/* Mini Progress Tracker */}
+                      {!isCancelled && (
+                        <div className="mb-4 py-3 px-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+                          <div className="flex items-center gap-1">
+                            {oStatuses.map((s, i) => {
+                              const done = i <= oIdx;
+                              const current = i === oIdx;
+                              return (
+                                <div key={s} className="flex items-center flex-1 last:flex-none">
+                                  <div className="flex flex-col items-center">
+                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                      done ? 'bg-green-500 text-white shadow-sm shadow-green-200 dark:shadow-green-900/50' : 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500'
+                                    }`}>
+                                      {done ? '✓' : i + 1}
+                                    </div>
+                                    <span className={`text-[9px] mt-1 font-semibold text-center leading-tight max-w-[60px] ${
+                                      current ? 'text-green-600 dark:text-green-400' : done ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'
+                                    }`}>{s === 'Ready for Pickup' ? 'Ready' : s}</span>
+                                  </div>
+                                  {i < oStatuses.length - 1 && (
+                                    <div className={`flex-1 h-0.5 mx-1 mb-4 rounded-full ${i < oIdx ? 'bg-green-400 dark:bg-green-600' : 'bg-gray-200 dark:bg-gray-600'}`} />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Cancelled Banner */}
+                      {isCancelled && (
+                        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800/30 text-sm text-red-600 dark:text-red-400 font-semibold flex items-center gap-2">
+                          <X size={16} /> This order has been cancelled
+                        </div>
+                      )}
+
+                      {/* Order Items */}
+                      <div className="space-y-1.5 mb-4">
+                        {order.orderItems
+                          .filter((item: any) => item.seller?.toString() === userInfo?._id || item.seller?._id === userInfo?._id)
+                          .map((item: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-sm px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-md flex items-center justify-center text-[10px] font-bold">{item.qty}</span>
+                                <span className="text-gray-700 dark:text-gray-300 font-medium">{item.name}</span>
+                              </div>
+                              <span className="font-bold text-gray-900 dark:text-white">₹{(item.price * item.qty).toFixed(2)}</span>
+                            </div>
+                          ))}
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        {/* Quick Next Status Button */}
+                        {nextStatus && (
+                          <button
+                            onClick={() => updateOrderStatus(order._id, nextStatus)}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl transition shadow-sm shadow-green-200 dark:shadow-green-900/30"
+                          >
+                            <Package size={16} />
+                            Mark as {nextStatus === 'Ready for Pickup' ? 'Ready' : nextStatus}
+                          </button>
+                        )}
+                        {isDone && (
+                          <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-bold text-sm rounded-xl">
+                            ✅ Order Complete
+                          </div>
+                        )}
+
+                        {/* Dropdown for other statuses */}
+                        <select
                           value={order.status}
                           onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                          className="flex-1 sm:w-48 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                          className="px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 focus:ring-2 focus:ring-green-500 outline-none"
                         >
-                          <option value="Pending">Placed (Pending)</option>
-                          <option value="Packed">Confirmed (Packed)</option>
-                          {order.deliveryType === 'Pickup' ? (
+                          <option value="Pending">Pending</option>
+                          <option value="Packed">Packed</option>
+                          {isPickup ? (
                             <>
-                              <option value="Ready for Pickup">Ready</option>
-                              <option value="Picked Up">Delivered (Picked Up)</option>
+                              <option value="Ready for Pickup">Ready for Pickup</option>
+                              <option value="Picked Up">Picked Up</option>
                             </>
                           ) : (
                             <>
-                              <option value="Shipped">Ready (Shipped)</option>
+                              <option value="Shipped">Shipped</option>
                               <option value="Delivered">Delivered</option>
                             </>
                           )}
                           <option value="Cancelled">Cancelled</option>
                         </select>
-                        
-                        {isNew && (
-                          <button 
-                            onClick={() => markOrderSeen(order._id)}
-                            className="p-2 text-gray-400 hover:text-green-500 bg-gray-50 dark:bg-gray-700 rounded-lg transition"
-                            title="Mark as Seen"
+
+                        <div className="flex gap-1.5">
+                          {isNew && (
+                            <button
+                              onClick={() => markOrderSeen(order._id)}
+                              className="p-2.5 text-gray-400 hover:text-green-500 bg-gray-50 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition"
+                              title="Mark as Seen"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => hideSellerOrder(order._id)}
+                            className="p-2.5 text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition"
+                            title="Hide Order"
                           >
-                            <Eye size={18} />
+                            <Trash2 size={16} />
                           </button>
-                        )}
+                        </div>
                       </div>
-                      
-                      <button 
-                        onClick={() => hideSellerOrder(order._id)}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-lg transition font-semibold"
-                      >
-                        <Trash2 size={16} /> Hide Order
-                      </button>
                     </div>
                   </motion.div>
                 );
